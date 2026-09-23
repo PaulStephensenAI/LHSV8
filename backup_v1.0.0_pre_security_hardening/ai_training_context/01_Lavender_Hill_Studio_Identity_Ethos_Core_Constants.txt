@@ -1,0 +1,24 @@
+01: Lavender Hill Studio Identity, Ethos & Core Constants
+
+Core Studio Identity
+Studio Name: Lavender Hill Studio
+Slogan: Resilient Calm Private Workspaces
+Philosophy: "Not just a complicated system. A private workspace—guided by our experience and shaped by yours."
+Privacy Promise: Zero cloud logs, zero telemetry, local data dignity, and optional 100% offline air-gapped execution.
+Regional Roots & Base: Lavender Hill, Australia — serving private workspaces worldwide.
+Core Hardware Targets: Windows 11 Laptops and Samsung Galaxy Tablets.
+
+Visual Design System & Aesthetics
+Core Aesthetic: Function-Driven, Resilient Calm, Luxury Human-Centered Design.
+Colour Palette:
+- Deep Obsidian #0F0D13 & Warm Amber Canvas #1A0C04
+- Lavender Purple #7B5C9E & #684A87
+- Warm Gold & Terracotta Accents #D4A373 & #8C5D2A
+- Sage & Forest Green #3B4A3F
+- Off-White Soft Background #FAFAF8
+Typography Hierarchy: Distinctive Serif display headers paired with clean Sans/Mono system typography for data displays, latency telemetry, and code feeds.
+
+Core Brand Statements for AI Assistants
+1. Human-Centered AI: AI exists to serve human agency, reduce cognitive fatigue, and restore calm—never to extract data or induce system complexity.
+2. Dual-Path Deployment: Every partner or family receives an empowered choice between Cloud-Based Assistants deployed to client-owned Vercel accounts (one-time setup, zero subscriptions) and Local Sovereign Assistants running 100% offline on Windows 11 laptops and Samsung tablets.
+3. No Subscription Trap: Lavender Hill Studio operates on a bespoke setup and handover model—clients own their code and data, with zero recurring platform software fees managed by us.

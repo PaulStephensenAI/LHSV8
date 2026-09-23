@@ -1,0 +1,136 @@
+/**
+ * Lavender Hill Studio - Holographic Panels v2 Stylesheet
+ * Architectural Design Module: "Resilient Calm" Glassmorphism & Visual Ecosystem
+ * WCAG 2.1 AA Compliant Tokens, Smooth Tactile Curves & Mobile-Optimized Blur Scaling
+ */
+
+:root {
+  /* Resilient Calm Glassmorphism Tokens - Warm Linen / Light Architecture */
+  --holo-surface-light: rgba(255, 255, 255, 0.92);
+  --holo-surface-dark: rgba(255, 255, 255, 0.95);
+  --holo-border-light: rgba(229, 224, 216, 0.9);
+  --holo-border-dark: rgba(208, 200, 188, 0.8);
+  --holo-glow-lavender: rgba(123, 92, 158, 0.15);
+  --holo-glow-teal: rgba(74, 124, 132, 0.15);
+  --holo-glow-gold: rgba(212, 163, 115, 0.15);
+
+  /* Tactile Physics Curves */
+  --ease-tactile: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-ambient: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Base Glassmorphism Panels */
+.holo-panel-v2 {
+  background: var(--holo-surface-light);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--holo-border-light);
+  box-shadow: 0 10px 30px 0 rgba(35, 79, 86, 0.06);
+  transition: transform 0.35s var(--ease-tactile), box-shadow 0.35s var(--ease-tactile), border-color 0.35s var(--ease-tactile);
+}
+
+.holo-panel-v2:hover {
+  transform: translateY(-2px);
+  border-color: rgba(147, 51, 234, 0.45);
+  box-shadow: 0 14px 36px 0 rgba(147, 51, 234, 0.12);
+}
+
+/* Specialized Companion Glass Cards */
+.holo-card-toni {
+  background: radial-gradient(circle at top left, rgba(147, 51, 234, 0.06), transparent 70%), #FFFFFF;
+  border-color: rgba(147, 51, 234, 0.25);
+}
+.holo-card-toni:hover {
+  border-color: rgba(147, 51, 234, 0.6);
+  box-shadow: 0 12px 30px -4px rgba(147, 51, 234, 0.15);
+}
+
+.holo-card-elysian {
+  background: radial-gradient(circle at top left, rgba(14, 165, 233, 0.06), transparent 70%), #FFFFFF;
+  border-color: rgba(14, 165, 233, 0.25);
+}
+.holo-card-elysian:hover {
+  border-color: rgba(14, 165, 233, 0.6);
+  box-shadow: 0 12px 30px -4px rgba(14, 165, 233, 0.15);
+}
+
+.holo-card-phoebe {
+  background: radial-gradient(circle at top left, rgba(16, 185, 129, 0.06), transparent 70%), #FFFFFF;
+  border-color: rgba(16, 185, 129, 0.25);
+}
+.holo-card-phoebe:hover {
+  border-color: rgba(16, 185, 129, 0.6);
+  box-shadow: 0 12px 30px -4px rgba(16, 185, 129, 0.15);
+}
+
+.holo-card-holly {
+  background: radial-gradient(circle at top left, rgba(245, 158, 11, 0.06), transparent 70%), #FFFFFF;
+  border-color: rgba(245, 158, 11, 0.25);
+}
+.holo-card-holly:hover {
+  border-color: rgba(245, 158, 11, 0.6);
+  box-shadow: 0 12px 30px -4px rgba(245, 158, 11, 0.15);
+}
+
+.holo-card-ari {
+  background: radial-gradient(circle at top left, rgba(236, 72, 153, 0.06), transparent 70%), #FFFFFF;
+  border-color: rgba(236, 72, 153, 0.25);
+}
+.holo-card-ari:hover {
+  border-color: rgba(236, 72, 153, 0.6);
+  box-shadow: 0 12px 30px -4px rgba(236, 72, 153, 0.15);
+}
+
+.holo-card-kenny {
+  background: radial-gradient(circle at top left, rgba(59, 130, 246, 0.06), transparent 70%), #FFFFFF;
+  border-color: rgba(59, 130, 246, 0.25);
+}
+.holo-card-kenny:hover {
+  border-color: rgba(59, 130, 246, 0.6);
+  box-shadow: 0 12px 30px -4px rgba(59, 130, 246, 0.15);
+}
+
+/* Ultra Low-Light / High-Contrast Dark Mode Guardrails */
+.holo-dark-lowlight {
+  background: rgba(10, 8, 14, 0.94);
+  border: 1px solid rgba(120, 113, 108, 0.4);
+  color: #F5F2EB;
+}
+
+.holo-dark-lowlight strong, 
+.holo-dark-lowlight h1, 
+.holo-dark-lowlight h2, 
+.holo-dark-lowlight h3, 
+.holo-dark-lowlight h4 {
+  color: #FFFFFF;
+}
+
+/* Tactile Button Feedback */
+.btn-holo-tactile {
+  transition: transform 0.2s var(--ease-tactile), box-shadow 0.2s var(--ease-tactile), background-color 0.2s var(--ease-tactile);
+}
+
+.btn-holo-tactile:hover {
+  transform: translateY(-1px) scale(1.01);
+}
+
+.btn-holo-tactile:active {
+  transform: translateY(1px) scale(0.98);
+}
+
+/* Responsive Mobile GPU & Backdrop-Blur Optimization */
+@media (max-width: 640px) {
+  .holo-panel,
+  .holo-panel-dark,
+  .holo-panel-v2,
+  .holo-card-toni,
+  .holo-card-elysian,
+  .holo-card-phoebe,
+  .holo-card-holly,
+  .holo-card-ari,
+  .holo-card-kenny {
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+}

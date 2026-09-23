@@ -1,0 +1,6 @@
+{
+  "name": "Lavender Hill Studio — ToniAI™ Framework",
+  "description": "Interactive operational suite and companion environment for the ToniAI™ Framework and its six specialized digital companions (Toni, Elysian, Phoebe, Holly, Ari, and Kenny) under the AIEE ethical framework.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

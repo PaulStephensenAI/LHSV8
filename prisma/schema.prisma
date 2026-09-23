@@ -1,0 +1,114 @@
+// ============================================================================
+// Lavender Hill Studio — Embodied RAG Dual-Notebook SQLite Architecture
+// Specification: Phase 1 Offline-First Vector Partitioning
+// Security Directive: Dolphin Principles (Zero Cloud Storage, Air-Gapped Local)
+// Target Runtime: Windows 11 & Samsung Galaxy Tab S10 Ultra (Android)
+// ============================================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("LOCAL_DATABASE_URL")
+}
+
+// ----------------------------------------------------------------------------
+// Notebook 1: UI Operations & Kinetic State (notebook_ui_ops)
+// Designed for ultra-low-latency 60 FPS spatial rendering and WebGL interactivity.
+// Houses DOM component structures, 3D WebGL spatial anchors (rotation theta, 
+// perspective zoom z), camera vectors, and micro-interaction form telemetry.
+// ----------------------------------------------------------------------------
+model NotebookUiOps {
+  id              String   @id @default(uuid())
+  slug            String   @unique
+  componentName   String   // e.g., "SpatialHologramLab", "CompanionAvatar", "FormKinetic"
+  interactionType String   // "dom_node", "webgl_kinetic", "spatial_anchor", "gesture_event"
+  
+  // High-frequency kinetic & layout vectors
+  spatialAnchor   String?  // e.g., "45_deg_side_by_side", "0_deg_direct"
+  perspectiveZ    Float?   // Depth coefficient (0.8x to 2.0x)
+  rotationTheta   Float?   // Angle in degrees (0 to 90)
+  
+  // Text payload & DOM/State representation
+  content         String   // Semantic description, HTML/JSX skeleton, or kinetic formula
+  
+  // Vector Embedding storage for SQLite:
+  // Stored as raw IEEE-754 Little-Endian Float32Array binary BLOB (768 x 4 = 3072 bytes).
+  // Zero-copy deserialization prevents GC pressure on the 60 FPS render thread.
+  embedding       Bytes    
+  embeddingDim    Int      @default(768) // Target dimension (768 for text-embedding-004)
+  
+  // Fast metadata for hybrid filtering without JSON parsing overhead
+  category        String   // "navigation", "hologram_shader", "audio_synthesizer", "theme"
+  metadataJson    String?  // Serialized extra attributes (bounding box, transition speeds)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([componentName])
+  @@index([interactionType])
+  @@index([category])
+  @@map("notebook_ui_ops")
+}
+
+// ----------------------------------------------------------------------------
+// Notebook 2: Strategic Knowledge & Ethical Frameworks (notebook_strategic)
+// Houses deep contextual business intelligence, AIEE ethical charters,
+// clinical rehabilitation pacing (Kenny), founder ethics (Paul Stephensen),
+// persona behavioral profiles, and product portfolio specifications.
+// ----------------------------------------------------------------------------
+model NotebookStrategic {
+  id              String   @id @default(uuid())
+  chunkId         String   @unique // e.g., "AIEE_CHARTER_04_CHUNK_02"
+  documentTitle   String   // e.g., "Compliance Security Governance Privacy Controls"
+  sourceFile      String   // Relative path e.g., "ai_training_context/04_compliance.txt"
+  
+  // Knowledge partition category
+  domain          String   // "aiee_ethics", "clinical_governance", "founder_ethos", "business_model", "persona_dossier"
+  companionAffinity String? // e.g., "toni", "elysian", "kenny", "holly", "phoebe", "ari"
+  
+  // Content & Semantic Chunk
+  content         String   // Cleaned Markdown / text chunk
+  tokenCount      Int?     // Approximate token count
+  chunkIndex      Int      // Sequential position in source document
+  
+  // Vector Embedding storage for SQLite:
+  // Raw Float32Array binary BLOB (768 or 1536 dimensions) for local vector search.
+  embedding       Bytes
+  embeddingDim    Int      @default(768)
+  
+  // Ethical Invariant & Audit Governance
+  invariantRule   String?  // e.g., "NON_PRESCRIPTIVE_MEDICAL_BOUNDARY", "NO_CLOUD_EXFILTRATION"
+  auditStandard   String   @default("ISO_IEC_25010_2023")
+  isCertified     Boolean  @default(true)
+  
+  // Extended metadata for structured retrieval
+  metadataJson    String?  // JSON string containing keywords, cross-references, author
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([domain])
+  @@index([companionAffinity])
+  @@index([documentTitle])
+  @@map("notebook_strategic")
+}
+
+// ----------------------------------------------------------------------------
+// SQLite Virtual Table for sqlite-vec Integration (Reference Schema)
+// When sqlite-vec native extension is loaded, these virtual tables provide
+// SIMD-accelerated KNN vector search within SQLite:
+//
+// CREATE VIRTUAL TABLE IF NOT EXISTS vec_notebook_ui_ops USING vec0(
+//   id TEXT PRIMARY KEY,
+//   embedding FLOAT[768]
+// );
+//
+// CREATE VIRTUAL TABLE IF NOT EXISTS vec_notebook_strategic USING vec0(
+//   id TEXT PRIMARY KEY,
+//   embedding FLOAT[768]
+// );
+// ----------------------------------------------------------------------------

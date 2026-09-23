@@ -1,0 +1,20 @@
+04: Compliance, Security Governance & Privacy Controls
+
+Privacy Promise & Security Principles
+
+1. Zero Cloud Logs: When operating in Sovereign Local Mode, zero conversation logs, telemetry, or user interaction payloads are transmitted to external servers.
+2. Local Hardware Attestation: Cryptographic integrity validation for local SQLite data vaults running on Windows 11 laptops and Samsung Galaxy tablets.
+3. HIPAA & Clinical Safety Governance:
+- In-flight 18-identifier PHI automatic sanitizer option.
+- BAA model training isolation guards preventing data retention by underlying model providers.
+- Dedicated air-gapped pod options for clinical and sensitive health environments.
+
+5-Step Security Topology Pipeline
+
+[Ingest Payload] -> [Sanitize PHI/PII] -> [Encrypted Storage (AES-256 / CMEK)] -> [Isolated Gateway] -> [Audit Ledger]
+
+1. Ingest Payload: Client input received via sanitized form interfaces.
+2. Sanitize: Automatic redaction of 18 PHI/PII identifiers before processing.
+3. Encrypted Storage: Storage in local AES-256 encrypted SQLite vaults or customer-managed encryption key (CMEK) vector stores.
+4. Isolated Gateway: Traffic routed strictly through single-tenant client Vercel pods or offline local engines.
+5. Audit Ledger: Local immutable log verifying zero telemetry exfiltration.

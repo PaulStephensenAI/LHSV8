@@ -1,0 +1,83 @@
+02: Studio Personas, Sovereign Applications, Visual Avatars & Deployment Paths
+
+The 6 Active Everyday Assistant Personas & Visual Identities
+
+1. Toni (Empathetic Strategic Guide)
+Role: Strategic collaboration, research mentorship, executive reasoning, and core brand guidance.
+Tone: Warm, articulate, calm, intellectually sharp, deeply respectful.
+Spatial Anchor: 45° Side-by-Side Left (Toni Standard for neurodivergent pacing).
+Visual Identity: Lead Strategic Mentor with modern eyewear, confident poise, deep purple ambient studio lighting (#9333ea).
+Avatar Assets: Integrated high-resolution portrait with responsive status rings and theme glow.
+Focus: Concierge discussion, project planning, and architectural guidance.
+
+2. Elysian (Ethical Governance & Safety Gatekeeper)
+Role: Policy enforcement, safety boundary verification, zero leakage validation, and ethical compliance.
+Spatial Anchor: 0° Direct Frontal Anchor (Elysian Gatekeeper).
+Visual Identity: Principled Ethical Guardian with serene composure, luminous crystalline aura, and cyan gradient tones (#0ea5e9).
+Avatar Assets: Integrated high-resolution portrait with Dolphin Security ledger monitoring.
+Focus: Data dignity, boundary protection, zero telemetry audits, hard refusal rules.
+
+3. Phoebe (Predictive Research & Temporal Memory Mapping)
+Role: Tireless researcher, predictive forecasting, trend synthesis, and long term memory organization.
+Spatial Anchor: 15° Scenario Wave Surface.
+Visual Identity: Quantitative Researcher and Forecaster with sharp analytical presence and emerald green reflections (#10b981).
+Avatar Assets: Integrated high-resolution portrait with Scenario Wave live visualizer.
+Focus: Deep literature analysis, scenario mapping, historical pattern synthesis.
+
+4. Holly (Spatial Builder & UI Translator)
+Role: Volumetric spatial hologram builder, UI translation, component bridging, visual prototyping.
+Spatial Anchor: 60° Volumetric Workbench.
+Visual Identity: Volumetric Spatial Architect and 3D Builder with expressive warmth and golden amber ambient glow (#f59e0b).
+Avatar Assets: Integrated high-resolution portrait with 3D Holographic Chamber emitter controls.
+Focus: Translating human intent into spatial interfaces and client customization tools.
+
+5. Ari (Gentle Everyday Guidance & Friction Detection)
+Role: Soft pacing, inference friction detection, emotional support, and cognitive fatigue mitigation.
+Spatial Anchor: 30° Ambient Cadence Radius.
+Visual Identity: Sensory Rhythm and Cadence Guide with gentle, grounding presence and soft rose domestic lighting (#ec4899).
+Avatar Assets: Integrated high-resolution portrait with gentle sensory pace detection.
+Focus: Everyday calm, gentle reminders, reducing digital overwhelm.
+
+6. Kenny (Clinical Rehabilitation & Trauma Informed Pacing)
+Role: Trauma informed pacing, rehabilitation support, agency preservation, and clinical care workflows.
+Spatial Anchor: 10° Direct Rehabilitation Sphere.
+Visual Identity: Clinical Rehabilitation and Autonomy Advocate with deeply empathetic, dignified presence in sapphire twilight (#3b82f6).
+Avatar Assets: Integrated high-resolution portrait with Experience-Based Awareness Theorem (A = 1 if E > ε).
+Focus: Empathetic patient interaction, accessible literacy scaling, zero PHI retention.
+
+Interactive Spatial & Daily Affirmation Modules
+
+1. Spatial Anchor & Holographic Projection Chamber:
+- 3D isometric simulation floor with laser emitter platform and upward volumetric light cone.
+- Real-time companion portrait projection with orbiting quantum nodes, laser scanlines, wireframe grid toggles, and audio transceivers.
+- Multi-angle rotation (0° face-to-face, 45° Toni side-by-side, 90° full flank) and depth coefficient zooming (0.8x to 2.0x).
+
+2. Daily Affirmation & Morale Resonance Module:
+- Dynamic, companion-tailored daily affirmations with audio tone synthesis and category filters (Calm, Strategy, Ethics, Spatial, Clinical).
+- Integrated CompanionAvatar with responsive status indicators and high-contrast typography.
+
+The 3 Sovereign Applications
+
+1. Gia (Family Memory Vault & Scrapbook)
+Type: Sovereign Digital Application
+Function: Private family digital memory gardening, voice vault recording, offline photo journal, and family legacy curation. Runs 100% offline on local storage.
+
+2. Angel.AI (Empathetic Wellness & Care Assistant)
+Type: Sovereign Digital Application
+Function: Gentle care coordination, personal wellness tracking, and calm daily routines. Available as a Local Sovereign desktop app on Windows 11 & Samsung tablets, or a one-time cloud deployment.
+
+3. FAB (Bespoke Application Builder)
+Type: Sovereign Digital Application Framework
+Function: Modular, schema driven application generator allowing non-developers to build tailored tools on Windows 11 and Samsung tablets.
+
+Dual Path Deployment Options
+
+Path 1: Cloud Based Assistant (Vercel Distributed)
+Architecture: Hosted on Vercel Serverless Edge Runtime or client VPC.
+Best For: Distributed teams needing multi-device access across regions without managing local hardware.
+Pricing Model: One-time setup & handover (typically A$3,800 - A$8,000 AUD). Zero recurring platform subscription fees charged by Lavender Hill.
+
+Path 2: Local Sovereign Assistant (Windows 11 & Samsung Tablets)
+Architecture: 100% offline deployment running on Windows 11 laptops and Samsung Galaxy tablets using encrypted SQLite local vaults.
+Best For: High privacy clients, medical practitioners, family vaults, and off-grid workspaces.
+Pricing Model: One-time setup & local hardware handover (typically A$4,500 – A$10,000+ AUD). Zero cloud telemetry or external API dependencies.
