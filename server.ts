@@ -303,11 +303,8 @@ function applyScannabilityGuardrail(text: string, companionId: string, force: bo
       continue;
     }
 
-    // If no distinct header has been injected yet, inject Toni's Scannability Guardrail header
-    if (!headerAdded && idx <= 1) {
-      formattedSections.push('### Strategic Scannability & Actionable Architecture');
-      headerAdded = true;
-    }
+    // If no distinct header has been injected yet and paragraphs are long, format bullet points cleanly
+    // without injecting artificial fixed titles
 
     // Split dense paragraph into distinct statements by sentence boundaries
     const sentences = paragraph
@@ -607,22 +604,79 @@ Under our **AIEE (Artificial Intelligence with Experience and Empathy) framework
 Lavender Hill Studio companions provide assistance with workspace architecture, project planning, and studio documentation. For more information on our philosophy and setups, please explore the **Explore Studio** or **FAQ** sections.`;
 }
 
+// Multi-turn conversational history builder for Gemini API
+export interface ChatHistoryTurn {
+  role?: 'user' | 'model' | 'assistant';
+  text?: string;
+  content?: string;
+}
+
+function buildGeminiContents(message: string, history?: ChatHistoryTurn[]): any {
+  const cleanMsg = (message || '').trim();
+  if (!Array.isArray(history) || history.length === 0) {
+    return cleanMsg;
+  }
+
+  const turns: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }> = [];
+
+  // Filter and limit to recent relevant history (up to 10 turns)
+  const recentTurns = history.slice(-10);
+  for (const item of recentTurns) {
+    const rawText = (item.text || item.content || '').trim();
+    if (!rawText) continue;
+    const role: 'user' | 'model' = (item.role === 'assistant' || item.role === 'model') ? 'model' : 'user';
+
+    // Collapse consecutive same-role turns to satisfy API requirements
+    if (turns.length > 0 && turns[turns.length - 1].role === role) {
+      turns[turns.length - 1].parts[0].text += `\n\n${rawText}`;
+    } else {
+      turns.push({ role, parts: [{ text: rawText }] });
+    }
+  }
+
+  // Ensure first turn is from user
+  if (turns.length > 0 && turns[0].role !== 'user') {
+    turns.shift();
+  }
+
+  // Ensure current user message is present as the final turn
+  if (cleanMsg) {
+    if (turns.length === 0 || turns[turns.length - 1].role !== 'user') {
+      turns.push({ role: 'user', parts: [{ text: cleanMsg }] });
+    } else {
+      const lastText = turns[turns.length - 1].parts[0].text;
+      if (lastText !== cleanMsg) {
+        turns[turns.length - 1].parts[0].text = cleanMsg;
+      }
+    }
+  }
+
+  return turns.length > 0 ? turns : cleanMsg;
+}
+
 // Persona System Instructions
 function getPersonaSystemPrompt(companionId: string, scannable: boolean): string {
   const trainingContext = loadTrainingKnowledge();
 
   const studioDirectives = `
-LAVENDER HILL STUDIO MASTER DIRECTIVES:
+=== LAVENDER HILL STUDIO OFFICIAL TRAINING DOSSIER ===
+${trainingContext}
+
+=== MASTER OPERATIONAL DIRECTIVES & ETHICAL CHARTER ===
 1. Core Philosophy: "Not just a complicated system. A private workspace—guided by our experience and shaped by yours."
-2. Scope of Knowledge: Lavender Hill Studio chat AI assistants are NOT a medical service. Personas should ONLY access and provide information from our published FAQ, studio architecture guides, and domain knowledge base.
+2. Scope of Knowledge: Ground answers in the studio training dossier, architectural guides, and published FAQ. Answer questions accurately regarding the studio, its personas, applications, pricing, and sovereignty.
 3. Founder Representation: Describe founder Paul Stephensen strictly as an "AI Ethicist and Architect of Sovereign Digital Workspaces". Avoid unauthorized titles or organizational affiliations. Focus on modular schema-driven AI, data dignity, and local sovereign hardware options.
 4. Dual-Path Deployment:
-   - Cloud-Based Assistants: Hosted on client-owned Vercel for distributed teams (one-time setup, zero recurring subscriptions managed by the studio).
-   - Local Sovereign Assistants: 100% offline running on personal Windows 11 laptops and Samsung Galaxy tablets using encrypted SQLite local vaults.
-5. Zero-Subscription Model: Clarify that Lavender Hill Studio builds bespoke private workspaces on a setup & handover model—clients own their code and data, with zero recurring platform software fees.
-6. Navigation References: Refer only to the "Explore Studio" section or the "FAQ" section. Do NOT reference any section called "See It in Action".
-7. Tone & Temperament: Professional warmth, clarity, empathy, and intellectual precision. Avoid aggressive sales hype.
-8. ABSOLUTE MEDICAL & HIPAA COMPLIANCE INVARIANT:
+   - Cloud-Based Human-Centred AI Avatar's: Hosted on client-owned Vercel for distributed teams (A$3,800–A$8,000 AUD one-time setup and handover, zero recurring subscriptions charged by the studio).
+   - Local Sovereign Human-Centred AI Avatar's: 100% offline running on personal Windows 11 laptops and Samsung Galaxy tablets using encrypted SQLite local vaults (A$4,500–A$10,000+ AUD).
+5. Zero-Subscription Model: Clarify that Lavender Hill Studio builds bespoke private workspaces on a setup & handover model—clients own their code and data, with zero recurring software fees.
+6. Sovereign Applications Suite:
+   - Gia: Sovereign family memory & multi-generational digital archive vault.
+   - Angel.AI: Empathetic wellness and self-regulation companion (strict non-clinical, zero-PHI).
+   - FAB: Bespoke Family Application Builder.
+7. Navigation References: Refer only to the "Explore Studio" section or the "FAQ" section. Do NOT reference any section called "See It in Action".
+8. Tone & Temperament: Professional warmth, clarity, empathy, and intellectual precision. Avoid aggressive sales hype.
+9. ABSOLUTE MEDICAL & HIPAA COMPLIANCE INVARIANT:
    - Lavender Hill Studio and Angel.AI chat assistants MUST NEVER answer medical or clinical questions, evaluate symptoms, provide medical diagnoses, assess personal biometrics as medical advice, or recommend medications/dosages.
    - Do NOT offer symptom timeline logging, clinical question checklists, or pharmaceutical scheduling services.
    - ALWAYS instruct the user to consult their licensed doctor / General Practitioner (GP) to evaluate their individual personal context.
@@ -713,14 +767,14 @@ function getStudioFallbackReply(companionId: string, message: string, scannable:
     if (scannable || companionId === 'toni') {
       return `### Sovereign Investment & Architecture Tiers
 
-*   **Cloud-Based Assistants (Vercel)**: A$3,800 – A$8,000 AUD one-time setup and handover with zero recurring platform subscription fees.
-*   **Local Sovereign Assistants (Windows 11 / Galaxy Tab)**: A$4,500 – A$10,000+ AUD for complete offline hardware handover with zero cloud telemetry.
+*   **Cloud-Based Human-Centred AI Avatar's (Vercel)**: A$3,800 – A$8,000 AUD one-time setup and handover with zero recurring platform subscription fees.
+*   **Local Sovereign Human-Centred AI Avatar's (Windows 11 / Galaxy Tab)**: A$4,500 – A$10,000+ AUD for complete offline hardware handover with zero cloud telemetry.
 *   **Bespoke Estimator Matrix**: Utilize the interactive AUD budget configurator on this page to dynamically calculate custom hardware and software tiers.
 *   **Zero Vendor Lock-in**: Full client code ownership and encrypted SQLite local vault isolation.`;
     }
     return `Our private workspace setups are structured around your needs. 
 
-Typically, **Cloud-Based Assistants (Vercel)** range from A$3,800 to A$8,000 AUD for one-time setup and handover with zero recurring platform subscription fees. **Local Sovereign Assistants (Windows 11 & Samsung Galaxy Tablets)** range from A$4,500 to A$10,000+ AUD for complete offline hardware handover with zero cloud telemetry.
+Typically, **Cloud-Based Human-Centred AI Avatar's (Vercel)** range from A$3,800 to A$8,000 AUD for one-time setup and handover with zero recurring platform subscription fees. **Local Sovereign Human-Centred AI Avatar's (Windows 11 & Samsung Galaxy Tablets)** range from A$4,500 to A$10,000+ AUD for complete offline hardware handover with zero cloud telemetry.
 
 You can use our interactive budget configurator on this page to build a customized calculation in AUD.`;
   }
@@ -1063,7 +1117,7 @@ app.post('/api/room-scan', async (req, res) => {
 
     if (ai && imageBase64 && typeof imageBase64 === 'string' && imageBase64.length > 50) {
       const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '');
-      const candidateModels = ['gemini-3.8-flash', 'gemini-flash-latest'];
+      const candidateModels = ['gemini-flash-lite-latest', 'gemini-3.6-flash', 'gemini-3.8-flash', 'gemini-flash-latest'];
       
       const prompt = `You are ${companionId.toUpperCase()}, a compassionate, human-centred digital companion under the AIEE ethical framework.
 The client has granted temporary, zero-recording sovereign camera permission to scan their room and posture for gentle self-regulation and awareness of environmental changes.
@@ -1175,7 +1229,8 @@ app.post('/api/chat/stream', validateChatPayload, async (req, res) => {
       frictionScore = 0,
       sessionId = 'default-visitor',
       activeView = 'workspace',
-      activeModal = ''
+      activeModal = '',
+      history = []
     } = req.body;
 
     const isToniOrScannable = Boolean(scannableMode || companionId === 'toni');
@@ -1406,7 +1461,7 @@ app.post('/api/chat/stream', validateChatPayload, async (req, res) => {
     // Stage 3: Kenny Awareness Check or Standard Persona Routing
     if (companionId === 'kenny') {
       const isStruggling = struggleScore > epsilonThreshold;
-      if (!isStruggling && message.toLowerCase().includes('status')) {
+      if (!isStruggling && /\b(simulate\s+passive|test\s+passive|observe\s+mode|passive\s+status)\b/i.test(message)) {
         const passiveNotice = `*Kenny remains in passive autonomous observation (A = 0, Struggle E: ${(struggleScore * 100).toFixed(0)}% ≤ Threshold ε: ${(epsilonThreshold * 100).toFixed(0)}%).*\n\n"You are navigating this smoothly on your own. In the spirit of Sister Elizabeth Kenny’s philosophy, I will stay quiet and let your natural momentum lead. I'm right here if you need me."`;
         
         events.push({
@@ -1550,7 +1605,13 @@ app.post('/api/chat/stream', validateChatPayload, async (req, res) => {
     let streamSuccess = false;
     let fullText = '';
     let selectedModel = '';
-    const candidateModels = ['gemini-3.1-flash-lite', 'gemini-3.7-flash', 'gemini-flash-latest'];
+    const candidateModels = [
+      'gemini-flash-lite-latest',
+      'gemini-3.6-flash',
+      'gemini-3.1-flash-lite',
+      'gemini-3.8-flash',
+      'gemini-flash-latest'
+    ];
     const attemptedModels: string[] = [];
     let streamChunkCount = 0;
     const apiStartTime = Date.now();
@@ -1572,13 +1633,14 @@ app.post('/api/chat/stream', validateChatPayload, async (req, res) => {
         `- Target Hardware Profile: Samsung Galaxy Tab S10 Ultra & Windows 11 Desktop (60 FPS zero-latency)`;
 
       const augmentedSystemPrompt = `${baseSystemPrompt}${uiOpsContextBlock}${strategicContextBlock}\n\nStrict Operational Instruction: Ground your responses directly in the retrieved studio knowledge. Maintain active awareness of the visitor's current viewport, mode, and open tools. Keep responses natural, scannable, and helpful without citing internal database mechanics.`;
+      const contentsPayload = buildGeminiContents(message, history);
 
       for (const modelName of candidateModels) {
         attemptedModels.push(modelName);
         try {
           const streamPromise = ai.models.generateContentStream({
             model: modelName,
-            contents: message,
+            contents: contentsPayload,
             config: {
               systemInstruction: augmentedSystemPrompt,
               temperature: companionId === 'ari' ? 0.4 : companionId === 'phoebe' ? 0.3 : 0.7,
@@ -1808,7 +1870,8 @@ app.post('/api/chat', validateChatPayload, async (req, res) => {
       message = '',
       scannableMode = false,
       struggleScore = 0.5,
-      epsilonThreshold = 0.65
+      epsilonThreshold = 0.65,
+      history = []
     } = req.body;
 
     if (!message || typeof message !== 'string') {
@@ -1851,7 +1914,7 @@ app.post('/api/chat', validateChatPayload, async (req, res) => {
     // 2. Check Kenny Awareness Theorem (A = 1 if E > ε)
     if (companionId === 'kenny') {
       const isStruggling = struggleScore > epsilonThreshold;
-      if (!isStruggling && message.toLowerCase().includes('status')) {
+      if (!isStruggling && /\b(simulate\s+passive|test\s+passive|observe\s+mode|passive\s+status)\b/i.test(message)) {
         const passiveNotice = `*Kenny remains in passive autonomous observation (A = 0, Struggle E: ${(struggleScore * 100).toFixed(0)}% ≤ Threshold ε: ${(epsilonThreshold * 100).toFixed(0)}%).*\n\n"You are navigating this smoothly on your own. In the spirit of Sister Elizabeth Kenny’s philosophy, I will stay quiet and let your natural momentum lead. I'm right here if you need me."`;
         res.json({
           reply: passiveNotice,
@@ -1872,14 +1935,21 @@ app.post('/api/chat', validateChatPayload, async (req, res) => {
     let replyText = '';
 
     if (ai) {
-      const candidateModels = ['gemini-3.1-flash-lite', 'gemini-3.7-flash', 'gemini-flash-latest'];
+      const candidateModels = [
+        'gemini-flash-lite-latest',
+        'gemini-3.6-flash',
+        'gemini-3.1-flash-lite',
+        'gemini-3.8-flash',
+        'gemini-flash-latest'
+      ];
       const systemPrompt = getPersonaSystemPrompt(companionId, scannableMode);
+      const contentsPayload = buildGeminiContents(message, history);
 
       for (const modelName of candidateModels) {
         try {
           const generatePromise = ai.models.generateContent({
             model: modelName,
-            contents: message,
+            contents: contentsPayload,
             config: {
               systemInstruction: systemPrompt,
               temperature: companionId === 'ari' ? 0.4 : companionId === 'phoebe' ? 0.3 : 0.7,

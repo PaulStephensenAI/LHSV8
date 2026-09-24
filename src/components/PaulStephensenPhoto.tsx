@@ -15,8 +15,8 @@ export const PaulStephensenPhoto: React.FC<PaulStephensenPhotoProps> = ({
   className = '',
   size = 'md',
   shape = 'rounded',
-  allowUpload = true,
-  showBadge = true
+  allowUpload = false,
+  showBadge = false
 }) => {
   const [customPhotoUrl, setCustomPhotoUrl] = useState<string | null>(null);
   const [showSavedToast, setShowSavedToast] = useState(false);
@@ -189,11 +189,11 @@ export const PaulStephensenPhoto: React.FC<PaulStephensenPhotoProps> = ({
             fileInputRef.current?.click();
           }
         }}
-        onDragOver={handleDragOver}
-        onDragEnter={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        title={allowUpload ? "Click or drag & drop to update founder avatar photo" : "Paul Stephensen - Founder"}
+        onDragOver={allowUpload ? handleDragOver : undefined}
+        onDragEnter={allowUpload ? handleDragOver : undefined}
+        onDragLeave={allowUpload ? handleDragLeave : undefined}
+        onDrop={allowUpload ? handleDrop : undefined}
+        title="Paul Stephensen - Founder & Principal Researcher"
       >
         {/* Hidden File Input */}
         {allowUpload && (

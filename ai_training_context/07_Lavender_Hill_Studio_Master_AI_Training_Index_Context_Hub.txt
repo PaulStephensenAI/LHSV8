@@ -30,8 +30,8 @@ All files in this folder are automatically loaded at server startup by `loadTrai
 
 2. **Hardware & Deployment Choice**:
 - Always present the dual-path choice clearly:
-  - **Cloud-Based Assistants**: Hosted on Vercel for distributed teams (one-time setup, zero subscriptions managed by us).
-  - **Local Sovereign Assistants**: 100% offline running on personal **Windows 11 laptops** and **Samsung Galaxy tablets**.
+  - **Cloud-Based Human-Centred AI Avatar's**: Hosted on Vercel for distributed teams (one-time setup, zero subscriptions managed by us).
+  - **Local Sovereign Human-Centred AI Avatar's**: 100% offline running on personal **Windows 11 laptops** and **Samsung Galaxy tablets**.
 
 3. **Website Navigation**:
 - The website sections are: Hero (intro), Explore Studio (companions & architecture), Founder Bio, Compliance & Security, FAQ, and the Bespoke Workspace Estimator.

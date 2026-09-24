@@ -90,13 +90,9 @@ export const FounderBioModal: React.FC<FounderBioModalProps> = ({
           {/* Founder Identity Card */}
           <div className="p-4 sm:p-5 rounded-2xl bg-[#171424] border border-purple-800/40 relative overflow-hidden">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              {/* Founder Portrait Photo with interactive upload */}
+              {/* Founder Portrait Photo (Locked) */}
               <div className="flex flex-col items-center gap-1.5 shrink-0">
-                <PaulStephensenPhoto size="md" shape="rounded" allowUpload={true} showBadge={true} />
-                <span className="text-[10px] font-mono text-purple-300/80 flex items-center gap-1">
-                  <Camera className="w-3 h-3 text-purple-400" />
-                  <span>Tap/Drop to change</span>
-                </span>
+                <PaulStephensenPhoto size="md" shape="rounded" allowUpload={false} showBadge={false} />
               </div>
               
               <div className="space-y-1">

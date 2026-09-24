@@ -72,12 +72,12 @@ Function: Modular, schema driven application generator allowing non-developers t
 
 Dual Path Deployment Options
 
-Path 1: Cloud Based Assistant (Vercel Distributed)
+Path 1: Cloud-Based Human-Centred AI Avatar's (Vercel Distributed)
 Architecture: Hosted on Vercel Serverless Edge Runtime or client VPC.
 Best For: Distributed teams needing multi-device access across regions without managing local hardware.
 Pricing Model: One-time setup & handover (typically A$3,800 - A$8,000 AUD). Zero recurring platform subscription fees charged by Lavender Hill.
 
-Path 2: Local Sovereign Assistant (Windows 11 & Samsung Tablets)
+Path 2: Local Sovereign Human-Centred AI Avatar's (Windows 11 & Samsung Tablets)
 Architecture: 100% offline deployment running on Windows 11 laptops and Samsung Galaxy tablets using encrypted SQLite local vaults.
 Best For: High privacy clients, medical practitioners, family vaults, and off-grid workspaces.
 Pricing Model: One-time setup & local hardware handover (typically A$4,500 – A$10,000+ AUD). Zero cloud telemetry or external API dependencies.

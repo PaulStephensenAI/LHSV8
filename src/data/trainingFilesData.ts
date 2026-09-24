@@ -38,7 +38,7 @@ Typography Hierarchy: Distinctive Serif display headers paired with clean Sans/M
 
 Core Brand Statements for AI Assistants
 1. Human-Centered AI: AI exists to serve human agency, reduce cognitive fatigue, and restore calm—never to extract data or induce system complexity.
-2. Dual-Path Deployment: Every partner or family receives an empowered choice between Cloud-Based Assistants deployed to client-owned Vercel accounts (one-time setup, zero subscriptions) and Local Sovereign Assistants running 100% offline on Windows 11 laptops and Samsung tablets.
+2. Dual-Path Deployment: Every partner or family receives an empowered choice between Cloud-Based Human-Centred AI Avatar's deployed to client-owned Vercel accounts (one-time setup, zero subscriptions) and Local Sovereign Human-Centred AI Avatar's running 100% offline on Windows 11 laptops and Samsung tablets.
 3. No Subscription Trap: Lavender Hill Studio operates on a bespoke setup and handover model—clients own their code and data, with zero recurring platform software fees managed by us.`
   },
   {
@@ -122,12 +122,12 @@ Function: Modular, schema driven application generator allowing non-developers t
 
 Dual Path Deployment Options
 
-Path 1: Cloud Based Assistant (Vercel Distributed)
+Path 1: Cloud-Based Human-Centred AI Avatar's (Vercel Distributed)
 Architecture: Hosted on Vercel Serverless Edge Runtime or client VPC.
 Best For: Distributed teams needing multi-device access across regions without managing local hardware.
 Pricing Model: One-time setup & handover (typically A$3,800 - A$8,000 AUD). Zero recurring platform subscription fees charged by Lavender Hill.
 
-Path 2: Local Sovereign Assistant (Windows 11 & Samsung Tablets)
+Path 2: Local Sovereign Human-Centred AI Avatar's (Windows 11 & Samsung Tablets)
 Architecture: 100% offline deployment running on Windows 11 laptops and Samsung Galaxy tablets using encrypted SQLite local vaults.
 Best For: High privacy clients, medical practitioners, family vaults, and off-grid workspaces.
 Pricing Model: One-time setup & local hardware handover (typically A$4,500 – A$10,000+ AUD). Zero cloud telemetry or external API dependencies.`
@@ -346,8 +346,8 @@ All files in this folder are automatically loaded at server startup by loadTrain
 
 2. Hardware & Deployment Choice:
 - Always present the dual-path choice clearly:
-  - Cloud-Based Assistants: Hosted on Vercel for distributed teams (one-time setup, zero subscriptions managed by us).
-  - Local Sovereign Assistants: 100% offline running on personal Windows 11 laptops and Samsung Galaxy tablets.
+  - Cloud-Based Human-Centred AI Avatar's: Hosted on Vercel for distributed teams (one-time setup, zero subscriptions managed by us).
+  - Local Sovereign Human-Centred AI Avatar's: 100% offline running on personal Windows 11 laptops and Samsung Galaxy tablets.
 
 3. Website Navigation:
 - The website sections are: Hero (intro), Explore Studio (companions & architecture), Founder Bio, Compliance & Security, FAQ, and the Bespoke Workspace Estimator.

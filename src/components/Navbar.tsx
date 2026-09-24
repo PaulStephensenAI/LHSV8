@@ -124,7 +124,31 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Floating Navigation Pill */}
           <div className="w-full lg:w-auto flex items-center justify-start lg:justify-center overflow-x-auto scrollbar-none py-0.5">
-            <nav className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-4 py-1.5 bg-white/95 rounded-full border border-[#E2DDD3] shadow-sm whitespace-nowrap">
+            <nav className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-1.5 bg-white/95 rounded-full border border-[#E2DDD3] shadow-sm whitespace-nowrap">
+              {/* Core Clean Links directly matching Mockup (Home, Learn, My studio) */}
+              <button
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="px-3 py-1 rounded-full text-xs font-semibold text-[#5A5568] hover:text-[#181524] transition-colors"
+              >
+                Home
+              </button>
+
+              <button
+                onClick={onScrollToTeam}
+                className="px-3 py-1 rounded-full text-xs font-bold text-[#7B5C9E] border-b-2 border-[#7B5C9E] transition-colors"
+              >
+                Learn
+              </button>
+
+              <button
+                onClick={onOpenConsultation}
+                className="px-3 py-1 rounded-full text-xs font-semibold text-[#5A5568] hover:text-[#181524] transition-colors"
+              >
+                My studio
+              </button>
+
+              <span className="w-px h-4 bg-[#E2DDD3] mx-1" aria-hidden="true" />
+
               <Tooltip
                 title="Meet the Team & Leadership"
                 badge="6 Personas + Founder"
@@ -136,7 +160,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="px-2.5 sm:px-3 py-1 rounded-full text-xs font-semibold text-[#3B3450] hover:text-[#181524] hover:bg-[#F5F2EB] transition-all flex items-center gap-1.5 shrink-0"
                 >
                   <Compass className="w-3.5 h-3.5 text-[#7B5C9E]" />
-                  <span>Meet the Team</span>
+                  <span>The 6 Avatars</span>
                 </button>
               </Tooltip>
 

@@ -231,13 +231,9 @@ export const PersonaSelectorGrid: React.FC<PersonaSelectorGridProps> = ({
           {/* Top Identity Block */}
           <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-[#ECE7DE]">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
-              {/* Official Photo with interactive upload */}
+              {/* Official Locked Founder Portrait */}
               <div className="flex flex-col items-center gap-2 shrink-0">
-                <PaulStephensenPhoto size="lg" shape="rounded" allowUpload={true} showBadge={true} />
-                <span className="text-[10px] font-mono text-[#7B5C9E] flex items-center gap-1 bg-[#F2ECF9] px-2.5 py-0.5 rounded-full border border-[#D5C6EC]">
-                  <Camera className="w-3 h-3 text-[#7B5C9E]" />
-                  <span>Update photo</span>
-                </span>
+                <PaulStephensenPhoto size="lg" shape="rounded" allowUpload={false} showBadge={false} />
               </div>
 
               <div className="space-y-1.5">
@@ -415,7 +411,7 @@ export const PersonaSelectorGrid: React.FC<PersonaSelectorGridProps> = ({
             <span className="text-xs font-mono text-[#7B5C9E] uppercase tracking-wider font-semibold">
               Cognitive Personas
             </span>
-            <span className="text-xs text-[#5A5568]">• Specialized Dual-Path AI Assistants</span>
+            <span className="text-xs text-[#5A5568]">• Specialized Dual-Path Human-Centred AI Avatar's</span>
           </div>
         </div>
 

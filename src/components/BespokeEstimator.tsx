@@ -314,7 +314,7 @@ export const BespokeEstimator: React.FC<BespokeEstimatorProps> = ({
         <div className="lg:col-span-2 space-y-8">
           
           {/* ========================================================================= */}
-          {/* STEP 1: Select Core Everyday Assistant Persona */}
+          {/* STEP 1: Select Core Everyday Avatar Persona */}
           {/* ========================================================================= */}
           <section 
             id="wizard-step-1"
@@ -338,7 +338,7 @@ export const BespokeEstimator: React.FC<BespokeEstimatorProps> = ({
                   />
                 </div>
                 <h4 id="step-1-title" className="text-xl sm:text-2xl font-serif font-bold text-slate-900">
-                  Select Core Everyday Assistant Persona
+                  Select Core Everyday Avatar Persona
                 </h4>
               </div>
               <span className="text-xs font-mono text-[#5A5568] hidden sm:inline-block">
@@ -461,7 +461,7 @@ export const BespokeEstimator: React.FC<BespokeEstimatorProps> = ({
                   />
                 </div>
                 <h4 id="step-2-title" className="text-xl sm:text-2xl font-serif font-bold text-slate-900">
-                  Select Assistant Deployment Environment
+                  Select Avatar Deployment Environment
                 </h4>
               </div>
               <span className="text-xs font-mono text-[#5A5568] hidden sm:inline-block">
@@ -475,11 +475,11 @@ export const BespokeEstimator: React.FC<BespokeEstimatorProps> = ({
               role="radiogroup" 
               aria-labelledby="step-2-title"
             >
-              {/* Option 1: Cloud-Based Assistant (Vercel) */}
+              {/* Option 1: Cloud-Based Human-Centred AI Avatar's (Vercel) */}
               <div
                 role="radio"
                 aria-checked={deploymentEnv === 'cloud'}
-                aria-label="Cloud-Based Assistant on Vercel. Additional cost: A$1,200 AUD"
+                aria-label="Cloud-Based Human-Centred AI Avatar's on Vercel. Additional cost: A$1,200 AUD"
                 tabIndex={0}
                 onClick={() => {
                   setDeploymentEnv('cloud');
@@ -520,7 +520,7 @@ export const BespokeEstimator: React.FC<BespokeEstimatorProps> = ({
 
                   <div>
                     <h5 className="font-serif font-bold text-slate-900 text-lg group-hover:text-[#7B5C9E] transition-colors">
-                      Cloud-Based Assistant (Vercel)
+                      Cloud-Based Human-Centred AI Avatar's (Vercel)
                     </h5>
                     <p className="text-xs sm:text-sm text-[#5A5568] leading-relaxed mt-2">
                       Hosted securely on Vercel for clients requiring seamless distributed team access across multiple devices without local hardware constraints.
@@ -536,11 +536,11 @@ export const BespokeEstimator: React.FC<BespokeEstimatorProps> = ({
                 </div>
               </div>
 
-              {/* Option 2: Local Sovereign Assistant (Win11 + Samsung) */}
+              {/* Option 2: Local Sovereign Human-Centred AI Avatar's (Win11 + Samsung) */}
               <div
                 role="radio"
                 aria-checked={deploymentEnv === 'local'}
-                aria-label="Local Sovereign Assistant for Windows 11 and Samsung. Additional cost: A$2,800 AUD"
+                aria-label="Local Sovereign Human-Centred AI Avatar's for Windows 11 and Samsung. Additional cost: A$2,800 AUD"
                 tabIndex={0}
                 onClick={() => {
                   setDeploymentEnv('local');
@@ -581,7 +581,7 @@ export const BespokeEstimator: React.FC<BespokeEstimatorProps> = ({
 
                   <div>
                     <h5 className="font-serif font-bold text-slate-900 text-lg group-hover:text-[#3B4A3F] transition-colors">
-                      Local Sovereign Assistant (Win11 + Samsung)
+                      Local Sovereign Human-Centred AI Avatar's (Win11 + Samsung)
                     </h5>
                     <p className="text-xs sm:text-sm text-[#5A5568] leading-relaxed mt-2">
                       Designed to run entirely offline on your own Windows 11 laptops and Samsung tablets—ensuring absolute data dignity and zero telemetry.
@@ -898,7 +898,7 @@ export const BespokeEstimator: React.FC<BespokeEstimatorProps> = ({
                     <span>1. {calculations.selectedPersonaObj.name}</span>
                     <span className="text-[10px] font-mono text-[#5A5568]">({calculations.selectedPersonaObj.role})</span>
                   </div>
-                  <div className="text-[11px] text-[#5A5568] mt-0.5">Base Assistant Persona Integration</div>
+                  <div className="text-[11px] text-[#5A5568] mt-0.5">Base Avatar Persona Integration</div>
                 </div>
                 <div className="font-mono font-bold text-slate-900 shrink-0">
                   A${calculations.personaBaseCost.toLocaleString()}

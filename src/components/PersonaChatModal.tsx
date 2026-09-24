@@ -193,7 +193,7 @@ const PERSONA_CONFIGS: Record<CompanionId, PersonaHeaderConfig> = {
 
 const SUGGESTED_QUESTIONS: Record<CompanionId, string[]> = {
   toni: [
-    'What is the difference between Cloud-Based (Vercel) and Local Sovereign (Windows 11 / Samsung) assistants?',
+    'What is the difference between Cloud-Based Human-Centred AI Avatar\'s and Local Sovereign Human-Centred AI Avatar\'s?',
     'How does Holly help plan a private 3D spatial workspace?',
     'Tell me about Sister Elizabeth Kenny\'s autonomy theorem.',
     'How do I structure my offline SQLite workspace layout?',
@@ -420,6 +420,15 @@ export const PersonaChatModal: React.FC<PersonaChatModalProps> = ({
     let finalMetadata: any = { footerTag: 'LOCAL FILE INDEX' };
 
     try {
+      const existingMessages = messagesByPersona[activeCompanionId] || [];
+      const historyPayload = existingMessages
+        .slice(-8)
+        .map(m => ({
+          role: m.sender === 'user' ? ('user' as const) : ('model' as const),
+          text: m.text
+        }))
+        .filter(item => item.text && item.text.trim().length > 0);
+
       const response = await fetch('/api/chat/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -427,6 +436,7 @@ export const PersonaChatModal: React.FC<PersonaChatModalProps> = ({
           companionId: activeCompanionId,
           personaId: activeCompanionId,
           message: text.trim(),
+          history: historyPayload,
           scannableMode: activeCompanionId === 'toni' || isScannableMode,
           sessionId,
           activeView: activeViewSection,
@@ -1718,70 +1728,95 @@ function generateLocalFallback(id: CompanionId, userQuery: string): string {
     return clientIntercept.reply;
   }
 
-  const isGreeting = /^(hi|hello|hey|good\s*(morning|afternoon|evening)|howdy|greetings|what'?s\s*up)/i.test(userQuery.trim());
+  const query = userQuery.trim().toLowerCase();
+  const isGreeting = /^(hi|hello|hey|good\s*(morning|afternoon|evening)|howdy|greetings|what'?s\s*up)/i.test(query);
+
+  if (query.includes('cost') || query.includes('price') || query.includes('pricing') || query.includes('budget') || query.includes('estimate')) {
+    return `### Sovereign Investment & Architecture Tiers
+
+*   **Cloud-Based Human-Centred AI Avatar's (Vercel)**: A$3,800 – A$8,000 AUD one-time setup and handover with zero recurring platform software fees.
+*   **Local Sovereign Human-Centred AI Avatar's (Windows 11 / Galaxy Tab)**: A$4,500 – A$10,000+ AUD for complete offline hardware handover with zero cloud telemetry.
+*   **Interactive Estimator**: You can explore dynamic hardware and software tier options in the budget section.
+*   **Complete Ownership**: Full source code handover with zero vendor lock-in or recurring subscriptions.`;
+  }
+
+  if (query.includes('persona') || query.includes('who are you') || query.includes('team') || query.includes('assistants') || query.includes('companions')) {
+    return `### Lavender Hill Studio Companions Framework
+
+*   **Toni**: Strategic Lead Guide & Executive Mentor (scannable reasoning, side-by-side 45° collaboration).
+*   **Elysian**: Ethical Guardian & Dolphin Security Gatekeeper (privacy boundaries, zero-PHI protection).
+*   **Phoebe**: Quantitative Forecaster & Chronus Ledger Analyst (stochastic scenarios, temporal tracking).
+*   **Holly**: Spatial Computing & UI Architect (3D volumetric blueprints, thermal optimization).
+*   **Ari**: Everyday Cadence & Gentle Guidance (fatigue mitigation, warm domestic metaphors).
+*   **Kenny**: Clinical Rehabilitation & Trauma-Informed Pacing (Sister Elizabeth Kenny autonomy theorem).`;
+  }
+
+  if (query.includes('app') || query.includes('gia') || query.includes('angel') || query.includes('fab') || query.includes('product')) {
+    return `### Sovereign Applications Suite
+
+*   **Gia**: Sovereign Family Memory & Multi-Generational Digital Archive Vault.
+*   **Angel.AI**: Empathetic Self-Regulation & Gentle Awareness Companion (non-clinical, zero-PHI).
+*   **FAB**: Family Application Builder for custom sovereign workflows.
+*   **Dual-Path Deployment**: Available in both cloud-synchronized and completely offline local hardware configurations.`;
+  }
 
   switch (id) {
     case 'toni':
       if (isGreeting) {
         return `Hello! It's wonderful to connect with you. I'm right here beside you at our collaborative 45-degree angle.
 
-Whether you're organizing a project, sorting through research notes, or pacing your daily priorities, how can I assist you today?`;
+Whether you're exploring our sovereign workspace architecture, planning a project, or reviewing our six studio companions, how can I assist you today?`;
       }
-      return `### Collaborative Strategy Synthesis
+      return `### Collaborative Strategy Insight
 
-*   **Active Inquiry**: "${userQuery}"
-*   **Milestone Breakdown**: Break your primary deliverable into three clear, scannable sub-tasks.
-*   **Cognitive Ergonomics**: Set a 25-minute checkpoint to alleviate mental fatigue and research anxiety.
-*   **Local Partition**: Ensure your local encrypted SQLite partition reflects this updated milestone.
-
-Take a moment to review this. What step feels most natural to tackle first?`;
+*   **Topic Explored**: "${userQuery}"
+*   **Sovereign Architecture**: Private, calm digital workspaces tailored to your pace and workflow.
+*   **Actionable Next Step**: Would you like to review our deployment paths (Cloud Vercel vs Local Sovereign), discuss pricing, or meet another studio companion?`;
 
     case 'elysian':
       if (isGreeting) {
-        return `Greetings. Elysian Gate and Dolphin Security invariants are active and nominal. All interactions remain protected within your local encrypted partition.`;
+        return `Greetings. Elysian Gate and Dolphin Security boundaries are active and nominal. All interactions remain strictly protected within your local encrypted partition.`;
       }
-      return `I have processed your query regarding: "${userQuery}".
+      return `### Elysian Gate Privacy & Boundary Verification
 
-*Elysian Gate Safety Verification: Invariant Status Passed*
-
-All data remains sealed within your local SQLite ledger. Our boundaries protect your autonomy and data dignity without technical friction or intrusive cloud telemetry.`;
+*   **Inquiry Checked**: "${userQuery}"
+*   **Data Dignity Status**: Protected under local zero-telemetry protocols.
+*   **Boundary Health**: Nominal. No external surveillance, tracking, or unauthorized clinical claims detected.`;
 
     case 'phoebe':
       if (isGreeting) {
-        return `Hello! Quantitative forecasting tools and Chronus ledger verification are ready. What data or scenarios shall we examine today?`;
+        return `Hello! Quantitative forecasting tools and Chronus ledger tracking are ready. What data, scenario, or project timeline shall we explore?`;
       }
-      return `**Phoebe Chronus Quantitative Assessment:**
-• **Query Evaluated:** "${userQuery}"
-• **Stochastic Scenario Mean ($\mu$):** 88.4% [95% CI: 82.1% - 94.7%]
-• **Variance ($\sigma^2$):** 0.042
-• **Chronus Checkpoint:** Signed and appended to local ledger.`;
+      return `### Phoebe Chronus Scenario Assessment
+
+*   **Analysis Focus**: "${userQuery}"
+*   **Probabilistic Pathway**: Paced for sustainable progress and steady milestone execution.
+*   **Temporal Ledger**: Logged securely for milestone validation.`;
 
     case 'holly':
       if (isGreeting) {
-        return `Hi! Spatial computing buffers are calibrated and thermal scaling is optimal. Ready to build 3D blueprints whenever you are!`;
+        return `Hi! Spatial computing buffers are calibrated and thermal scaling is optimal. Ready to explore 3D blueprints and responsive layouts!`;
       }
-      return `**Holly Volumetric Projection Initialized:**
-• **Spatial Alignment:** 45° azimuth offset relative to center viewport.
-• **Device Thermals:** Nominal (DPR set dynamically to 1.5x to preserve battery).
-• **Action:** Processing "${userQuery}" within the 3D hologram buffer.`;
+      return `### Holly Spatial Blueprint Overview
+
+*   **Viewport Query**: "${userQuery}"
+*   **Spatial Ergonomics**: 45° viewport alignment with low-power thermal scaling.
+*   **Interface Layer**: Ready to translate this into intuitive, responsive UI components.`;
 
     case 'ari':
       if (isGreeting) {
-        return `Hello there! Take a peaceful breath and settle in. There's no hurry at all. How can we make today feel calm and steady for you?`;
+        return `Hello there! Take a peaceful breath and settle in. There's no rush at all. How can we make today feel calm, steady, and unburdened for you?`;
       }
-      return `That makes total sense: "${userQuery}". 
+      return `I hear you on "${userQuery}".
 
-Think of this just like letting sourdough ferment slowly overnight in a cozy ceramic bowl. We don't need to force every detail at once. We give the foundation a little time and warmth, and the rest naturally comes together.`;
+Think of this just like letting bread dough rise slowly and naturally in a warm ceramic bowl. We don't have to tackle everything in one overwhelming rush. Take it one gentle step at a time, and the clarity will unfold.`;
 
     case 'kenny':
       if (isGreeting) {
-        return `Hello. I'm right here in passive awareness mode to support your independent stride. How are you feeling about your goals today?`;
+        return `Hello. I'm right here supporting your independent stride and celebrating your capability. What would you like to work through today?`;
       }
-      return `I hear you clearly on "${userQuery}".
+      return `I hear you clearly regarding "${userQuery}".
 
-**Kenny Awareness Observation ($A = 0$):**
-• Your struggle score ($E = 0.38$) remains well below the intervention threshold ($\varepsilon = 0.65$).
-• You have strong sovereign control over this task.
-• I am holding space in the background so your independent confidence continues to grow.`;
+In the spirit of Sister Elizabeth Kenny's rehabilitation philosophy, your natural momentum and capability come first. Take this step with confidence—you have full autonomy, and I'm right here if you need scaffolding.`;
   }
 }

@@ -15,16 +15,16 @@ export const FAQ_KNOWLEDGE_BASE: FAQItem[] = [
     id: 'faq-01',
     category: 'deployment',
     categoryLabel: 'Dual-Path Deployment',
-    question: 'What is the difference between Cloud-Based and Local Sovereign assistants?',
-    shortAnswer: 'Cloud-Based assistants run on client-owned Vercel accounts for multi-device access, while Local Sovereign assistants run 100% offline on Windows 11 laptops and Samsung Galaxy tablets with zero cloud dependencies.',
+    question: 'What is the difference between Cloud-Based and Local Sovereign Human-Centred AI Avatar\'s?',
+    shortAnswer: 'Cloud-Based Human-Centred AI Avatar\'s run on client-owned Vercel accounts for multi-device access, while Local Sovereign Human-Centred AI Avatar\'s run 100% offline on Windows 11 laptops and Samsung Galaxy tablets with zero cloud dependencies.',
     detailedAnswer: `Lavender Hill Studio empowers every client with a transparent dual-path deployment choice:
 
-1. **Cloud-Based Assistants (Vercel Distributed)**:
+1. **Cloud-Based Human-Centred AI Avatar's (Vercel Distributed)**:
    • Hosted on Vercel Serverless Edge Runtime or client VPC.
    • Ideal for distributed teams needing multi-device access across regions.
    • Delivered on a one-time setup & handover model (typically A$3,800 – A$8,000 AUD) with zero recurring platform subscriptions managed by us.
 
-2. **Local Sovereign Assistants (Windows 11 & Samsung Tablets)**:
+2. **Local Sovereign Human-Centred AI Avatar's (Windows 11 & Samsung Tablets)**:
    • 100% offline execution running on personal Windows 11 laptops and Samsung Galaxy tablets.
    • Uses local encrypted SQLite databases with SHA-256 cryptographic attestation.
    • Ideal for privacy-conscious individuals, researchers, and air-gapped workspaces (typically A$4,500 – A$10,000+ AUD).`,

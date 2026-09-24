@@ -236,7 +236,7 @@ export const DualPathDeploymentCards: React.FC<DualPathDeploymentCardsProps> = (
         role="region"
         aria-label="Deployment Paths"
       >
-        {/* Card 1 (Path 1): Cloud-Based Assistants */}
+        {/* Card 1 (Path 1): Cloud-Based Human-Centred AI Avatar's */}
         <article 
           className="holo-panel rounded-3xl p-6 sm:p-8 flex flex-col justify-between transition-all duration-400 ease-out hover:scale-[1.015] hover:shadow-md hover:border-[#7B5C9E]/40 group relative overflow-hidden"
           aria-labelledby="path-1-heading"
@@ -265,7 +265,7 @@ export const DualPathDeploymentCards: React.FC<DualPathDeploymentCardsProps> = (
               className="text-xl sm:text-2xl font-serif font-bold text-slate-900 flex items-baseline gap-2"
             >
               <span className="text-[#7B5C9E] font-mono text-lg sm:text-xl font-bold">1.</span>
-              <span>Cloud-Based Assistants</span>
+              <span>Cloud-Based Human-Centred AI Avatar's</span>
             </h3>
 
             {/* Description (Exact requested copy) */}
@@ -274,7 +274,7 @@ export const DualPathDeploymentCards: React.FC<DualPathDeploymentCardsProps> = (
             </p>
 
             {/* Architectural Highlights */}
-            <ul className="space-y-2.5 pt-2 text-sm text-[#383344] font-medium" aria-label="Cloud Assistant Key Benefits">
+            <ul className="space-y-2.5 pt-2 text-sm text-[#383344] font-medium" aria-label="Cloud Human-Centred AI Avatar's Key Benefits">
               <li className="flex items-center gap-2.5">
                 <CheckCircle2 className="w-4 h-4 text-[#7B5C9E] shrink-0" aria-hidden="true" />
                 <span>One-time client-owned VPC / Vercel deployment (zero software subscriptions)</span>
@@ -308,7 +308,7 @@ export const DualPathDeploymentCards: React.FC<DualPathDeploymentCardsProps> = (
           </div>
         </article>
 
-        {/* Card 2 (Path 2): Local Sovereign Assistants */}
+        {/* Card 2 (Path 2): Local Sovereign Human-Centred AI Avatar's */}
         <article 
           className="holo-panel rounded-3xl p-6 sm:p-8 flex flex-col justify-between transition-all duration-400 ease-out hover:scale-[1.015] hover:shadow-md hover:border-[#3B4A3F]/50 group relative overflow-hidden"
           aria-labelledby="path-2-heading"
@@ -337,7 +337,7 @@ export const DualPathDeploymentCards: React.FC<DualPathDeploymentCardsProps> = (
               className="text-xl sm:text-2xl font-serif font-bold text-slate-900 flex items-baseline gap-2"
             >
               <span className="text-[#3B4A3F] font-mono text-lg sm:text-xl font-bold">2.</span>
-              <span>Local Sovereign Assistants</span>
+              <span>Local Sovereign Human-Centred AI Avatar's</span>
             </h3>
 
             {/* Description (Exact requested copy) */}
@@ -346,7 +346,7 @@ export const DualPathDeploymentCards: React.FC<DualPathDeploymentCardsProps> = (
             </p>
 
             {/* Architectural Highlights */}
-            <ul className="space-y-2.5 pt-2 text-sm text-[#383344] font-medium" aria-label="Local Sovereign Assistant Key Benefits">
+            <ul className="space-y-2.5 pt-2 text-sm text-[#383344] font-medium" aria-label="Local Sovereign Human-Centred AI Avatar's Key Benefits">
               <li className="flex items-center gap-2.5">
                 <CheckCircle2 className="w-4 h-4 text-[#3B4A3F] shrink-0" aria-hidden="true" />
                 <span>Zero cloud logs, zero telemetry, air-gapped cryptographic vaults</span>

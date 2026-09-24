@@ -20,5 +20,5 @@ Typography Hierarchy: Distinctive Serif display headers paired with clean Sans/M
 
 Core Brand Statements for AI Assistants
 1. Human-Centered AI: AI exists to serve human agency, reduce cognitive fatigue, and restore calm—never to extract data or induce system complexity.
-2. Dual-Path Deployment: Every partner or family receives an empowered choice between Cloud-Based Assistants deployed to client-owned Vercel accounts (one-time setup, zero subscriptions) and Local Sovereign Assistants running 100% offline on Windows 11 laptops and Samsung tablets.
+2. Dual-Path Deployment: Every partner or family receives an empowered choice between Cloud-Based Human-Centred AI Avatar's deployed to client-owned Vercel accounts (one-time setup, zero subscriptions) and Local Sovereign Human-Centred AI Avatar's running 100% offline on Windows 11 laptops and Samsung tablets.
 3. No Subscription Trap: Lavender Hill Studio operates on a bespoke setup and handover model—clients own their code and data, with zero recurring platform software fees managed by us.

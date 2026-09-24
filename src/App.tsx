@@ -43,6 +43,7 @@ import { useVoiceControl } from './hooks/useVoiceControl';
 import { VoiceControlWidget } from './components/VoiceControlWidget';
 import { CompanionAvatar } from './components/CompanionAvatar';
 import { MasterHeroCard } from './components/MasterHeroCard';
+import { EditorialCalmHero, StorylineStage } from './components/EditorialCalmHero';
 import { SectionNavigator } from './components/SectionNavigator';
 import { EcosystemTab } from './components/LavenderHillEcosystem';
 import { Tooltip } from './components/Tooltip';
@@ -51,6 +52,7 @@ export default function App() {
   const [activeCompanionId, setActiveCompanionId] = useState<CompanionId>('toni');
   const [activeViewSection, setActiveViewSection] = useState<ViewSectionId>('workspace');
   const [ecosystemTab, setEcosystemTab] = useState<EcosystemTab>('team');
+  const [storylineStage, setStorylineStage] = useState<StorylineStage>('overview');
   const [isOfflineMode, setIsOfflineMode] = useState<boolean>(false);
   const [isCharterOpen, setIsCharterOpen] = useState<boolean>(false);
   const [isLedgerOpen, setIsLedgerOpen] = useState<boolean>(false);
@@ -199,9 +201,27 @@ export default function App() {
         
         {/* VIEW 1: Primary Companion Workspace */}
         {activeViewSection === 'workspace' && (
-          <div className="animate-in fade-in duration-200 space-y-8">
+          <div className="animate-in fade-in duration-200 space-y-8 sm:space-y-10">
             
-            {/* THE MASTER HERO CARD (Dual-Path Deployment + Featured Companion Roster & Hero Companion Card Cockpit) */}
+            {/* 1. CALM EDITORIAL INTRODUCTION (Directly aligned with requested mockup) */}
+            <EditorialCalmHero
+              activeCompanionId={activeCompanionId}
+              onSelectCompanion={handleSelectCompanion}
+              onOpenChat={handleOpenChat}
+              onOpenConsultation={() => setIsConsultationModalOpen(true)}
+              onScrollToTeam={handleScrollToTeam}
+              activeStage={storylineStage}
+              onSelectStage={(stage) => {
+                setStorylineStage(stage);
+                if (stage === 'meet-the-avatars') {
+                  setEcosystemTab('team');
+                } else if (stage === 'your-applications') {
+                  setEcosystemTab('tools');
+                }
+              }}
+            />
+
+            {/* 2. THE MASTER HERO COCKPIT & EXPLAINER CARD */}
             <MasterHeroCard
               activeCompanionId={activeCompanionId}
               onSelectCompanion={handleSelectCompanion}
