@@ -251,8 +251,12 @@ export interface RoomScanResult {
     lightingStatus: string;
     clutterIndex: 'low_minimal' | 'moderate' | 'high_cognitive_load';
     recentShift?: string;
+    spatialLayoutInsight?: string;
   };
   actionablePacingCues: string[];
   sovereignPrivacyStatus: 'zero_recorded_airgapped';
+  snapshotPreviewUrl?: string;
+  aiAnalysisSource?: 'gemini_multimodal' | 'deterministic_local';
+  cameraFacing?: 'user' | 'environment';
 }
 

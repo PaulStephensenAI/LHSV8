@@ -120,6 +120,7 @@ export default function App() {
   const handleScrollToTeam = () => {
     setActiveViewSection('workspace');
     setEcosystemTab('team');
+    window.location.hash = '#explore/avatars';
     setTimeout(() => {
       const target = document.getElementById('meet-the-team') || document.getElementById('panel-team') || document.getElementById('lavender-hill-ecosystem');
       target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -129,6 +130,7 @@ export default function App() {
   const handleOpenToolsTab = () => {
     setActiveViewSection('workspace');
     setEcosystemTab('tools');
+    window.location.hash = '#explore/applications';
     setTimeout(() => {
       const target = document.getElementById('panel-tools') || document.getElementById('tab-tools');
       target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -138,11 +140,70 @@ export default function App() {
   const handleOpenPlannerTab = () => {
     setActiveViewSection('workspace');
     setEcosystemTab('planner');
+    window.location.hash = '#explore/planner';
     setTimeout(() => {
       const target = document.getElementById('panel-planner') || document.getElementById('tab-planner');
       target?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 50);
   };
+
+  const handleOpenNotebooksTab = () => {
+    setActiveViewSection('workspace');
+    setEcosystemTab('notebooks');
+    window.location.hash = '#explore/notebooks';
+    setTimeout(() => {
+      const el = document.getElementById('embodied-notebooks-studio') || document.getElementById('panel-notebooks');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  };
+
+  const handleOpenAmbientScanTab = () => {
+    setActiveViewSection('workspace');
+    setEcosystemTab('ambient-scan');
+    window.location.hash = '#explore/room-scanner';
+    setTimeout(() => {
+      const el = document.getElementById('ambient-room-scanner-root') || document.getElementById('panel-ambient-scan');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 50);
+  };
+
+  // Synchronize Browser Back / Forward and addressable hash routes
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      if (!hash || hash === '#home') {
+        setActiveViewSection('workspace');
+      } else if (hash.startsWith('#explore')) {
+        setActiveViewSection('workspace');
+        if (hash.includes('avatars')) setEcosystemTab('team');
+        else if (hash.includes('applications')) setEcosystemTab('tools');
+        else if (hash.includes('notebooks')) setEcosystemTab('notebooks');
+        else if (hash.includes('room-scanner')) setEcosystemTab('ambient-scan');
+        else if (hash.includes('planner')) setEcosystemTab('planner');
+      } else if (hash === '#how-it-works') {
+        setActiveViewSection('workspace');
+        setTimeout(() => {
+          const el = document.getElementById('choose-workspace-lives') || document.getElementById('lavender-hill-ecosystem');
+          el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 60);
+      } else if (hash === '#about') {
+        setIsBioModalOpen(true);
+      } else if (hash === '#contact') {
+        setIsConsultationModalOpen(true);
+      } else if (hash === '#vocal-tones') {
+        setActiveViewSection('vocal-tones');
+      } else if (hash === '#spatial-lab') {
+        setActiveViewSection('spatial-lab');
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    // initial check on mount
+    if (window.location.hash) {
+      handleHashChange();
+    }
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   // Synchronize live visitor spatial & viewport context with notebook_ui_ops
   useEffect(() => {
@@ -165,6 +226,8 @@ export default function App() {
       <Navbar
         activeCompanionId={activeCompanionId}
         onSelectCompanion={handleSelectCompanion}
+        activeViewSection={activeViewSection}
+        ecosystemTab={ecosystemTab}
         isOfflineMode={isOfflineMode}
         onToggleOfflineMode={handleToggleOfflineMode}
         onOpenCharter={() => setIsCharterOpen(true)}
@@ -174,23 +237,51 @@ export default function App() {
         onOpenBrandGuide={() => setIsBrandGuideOpen(true)}
         onOpenBio={() => setIsBioModalOpen(true)}
         onOpenConsultation={() => setIsConsultationModalOpen(true)}
-        onOpenNotebooks={() => {
-          setActiveViewSection('workspace');
-          setEcosystemTab('notebooks');
-          setTimeout(() => {
-            const el = document.getElementById('embodied-notebooks-studio');
-            if (el) el.scrollIntoView({ behavior: 'smooth' });
-          }, 50);
-        }}
-        onOpenAmbientScan={() => {
-          setActiveViewSection('workspace');
-          setEcosystemTab('ambient-scan');
-          setTimeout(() => {
-            const el = document.getElementById('ambient-room-scanner-root');
-            if (el) el.scrollIntoView({ behavior: 'smooth' });
-          }, 50);
-        }}
+        onOpenNotebooks={handleOpenNotebooksTab}
+        onOpenAmbientScan={handleOpenAmbientScanTab}
+        onOpenTools={handleOpenToolsTab}
+        onOpenPlanner={handleOpenPlannerTab}
         onScrollToTeam={handleScrollToTeam}
+        onSelectEcosystemTab={(tab) => {
+          setActiveViewSection('workspace');
+          setEcosystemTab(tab);
+          if (tab === 'team') window.location.hash = '#explore/avatars';
+          else if (tab === 'tools') window.location.hash = '#explore/applications';
+          else if (tab === 'notebooks') window.location.hash = '#explore/notebooks';
+          else if (tab === 'ambient-scan') window.location.hash = '#explore/room-scanner';
+          else if (tab === 'planner') window.location.hash = '#explore/planner';
+        }}
+        onNavigateHome={() => {
+          setActiveViewSection('workspace');
+          window.location.hash = '#home';
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        onNavigateExplore={(tab) => {
+          setActiveViewSection('workspace');
+          const targetTab = tab || 'team';
+          setEcosystemTab(targetTab);
+          if (targetTab === 'team') window.location.hash = '#explore/avatars';
+          else if (targetTab === 'tools') window.location.hash = '#explore/applications';
+          else if (targetTab === 'notebooks') window.location.hash = '#explore/notebooks';
+          else if (targetTab === 'ambient-scan') window.location.hash = '#explore/room-scanner';
+          else if (targetTab === 'planner') window.location.hash = '#explore/planner';
+        }}
+        onNavigateHowItWorks={() => {
+          setActiveViewSection('workspace');
+          window.location.hash = '#how-it-works';
+          setTimeout(() => {
+            const el = document.getElementById('choose-workspace-lives') || document.getElementById('lavender-hill-ecosystem');
+            el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }, 60);
+        }}
+        onNavigateAbout={() => {
+          window.location.hash = '#about';
+          setIsBioModalOpen(true);
+        }}
+        onNavigateContact={() => {
+          window.location.hash = '#contact';
+          setIsConsultationModalOpen(true);
+        }}
         isVoiceListening={isVoiceListening}
         isVoiceSupported={isVoiceSupported}
         onToggleVoiceControl={handleToggleVoiceControl}
@@ -206,6 +297,7 @@ export default function App() {
             {/* 1. CALM EDITORIAL INTRODUCTION (Directly aligned with requested mockup) */}
             <EditorialCalmHero
               activeCompanionId={activeCompanionId}
+              ecosystemTab={ecosystemTab}
               onSelectCompanion={handleSelectCompanion}
               onOpenChat={handleOpenChat}
               onOpenConsultation={() => setIsConsultationModalOpen(true)}
@@ -215,9 +307,19 @@ export default function App() {
                 setStorylineStage(stage);
                 if (stage === 'meet-the-avatars') {
                   setEcosystemTab('team');
+                  window.location.hash = '#explore/avatars';
                 } else if (stage === 'your-applications') {
                   setEcosystemTab('tools');
+                  window.location.hash = '#explore/applications';
                 }
+              }}
+              onSelectEcosystemTab={(tab) => {
+                setEcosystemTab(tab);
+                if (tab === 'team') window.location.hash = '#explore/avatars';
+                else if (tab === 'tools') window.location.hash = '#explore/applications';
+                else if (tab === 'notebooks') window.location.hash = '#explore/notebooks';
+                else if (tab === 'ambient-scan') window.location.hash = '#explore/room-scanner';
+                else if (tab === 'planner') window.location.hash = '#explore/planner';
               }}
             />
 
@@ -529,8 +631,15 @@ export default function App() {
       {/* Floating Section Navigator & Quick Directory Switchboard */}
       <SectionNavigator
         activeViewSection={activeViewSection}
+        ecosystemTab={ecosystemTab}
         onSelectViewSection={(sec) => setActiveViewSection(sec)}
+        onSelectEcosystemTab={(tab) => {
+          setActiveViewSection('workspace');
+          setEcosystemTab(tab);
+        }}
         onOpenTeam={handleScrollToTeam}
+        onOpenNotebooks={handleOpenNotebooksTab}
+        onOpenAmbientScan={handleOpenAmbientScanTab}
         onOpenTools={handleOpenToolsTab}
         onOpenPlanner={handleOpenPlannerTab}
         onOpenCharter={() => setIsCharterOpen(true)}

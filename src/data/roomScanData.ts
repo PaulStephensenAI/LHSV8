@@ -120,7 +120,9 @@ export const COMPANION_SENSORY_ROLES: Record<CompanionId, {
 export function generateLocalRoomScanAnalysis(
   companionId: CompanionId,
   metrics: RoomScanMetrics,
-  customNote?: string
+  customNote?: string,
+  cameraFacing?: 'user' | 'environment',
+  snapshotPreviewUrl?: string
 ): RoomScanResult {
   const role = COMPANION_SENSORY_ROLES[companionId] || COMPANION_SENSORY_ROLES.ari;
   
@@ -135,21 +137,29 @@ export function generateLocalRoomScanAnalysis(
   if (metrics.screenContrastRatio > 6) score -= 12;
   score = Math.max(32, Math.min(98, score));
 
+  const isEnvironmentScan = cameraFacing === 'environment';
+
   // Companion-specific observation texts
   const observations: Record<CompanionId, string> = {
-    ari: metrics.lightingQuality === 'dim_strained'
+    ari: isEnvironmentScan
+      ? `Room panorama scan: The room illumination is at ${metrics.ambientBrightness}% with ${metrics.lightingQuality.replace('_', ' ')} characteristics. Creating a softer gradient between your immediate workspace perimeter and ambient background will immediately lower sensory strain.`
+      : metrics.lightingQuality === 'dim_strained'
       ? `I can see the room around you has grown quite dim, leaving your screen as a sharp, intense light source. Your shoulders are carrying a noticeable lift of tension. Let's soften the room lighting together and take a peaceful, slow breath.`
       : metrics.movementDelta > 60
       ? `There seems to be a lot of rapid visual motion in your space right now. When screens and open tabs compete for attention, our sensory systems naturally feel overwhelmed. Let's give your eyes a quiet moment to settle.`
       : `Your room has a steady, gentle quality. Your posture looks relatively relaxed, though your neck is leaning slightly toward the display. Let's pause and maintain this calm pacing.`,
     
-    kenny: metrics.detectedPosture === 'slumped_forward'
+    kenny: isEnvironmentScan
+      ? `Physical environment overview: I notice the layout of your furniture and tools. Take whatever comfort adjustments you need without forcing rigid perfection. Your space belongs to your body's rhythm.`
+      : metrics.detectedPosture === 'slumped_forward'
       ? `You look like you’ve been holding yourself up through sheer effort today. Your neck and upper back are carrying a lot of weight right now. You don't have to push through it. Let your chair support your lower back, and take whatever pace feels kind to you.`
       : metrics.movementDelta > 60
       ? `I notice a few shifts in your space. Remember, you have complete control over this environment. If the room feels too bright, too quiet, or cluttered, making even one small adjustment is a win.`
       : `I see you settled in your space. Your breathing cadence appears steady. Take a moment to notice your feet on the floor and feel grounded in your room.`,
 
-    toni: metrics.lightingQuality === 'dim_strained' || metrics.screenContrastRatio > 5
+    toni: isEnvironmentScan
+      ? `Spatial architecture review: Desk zone presents ${metrics.movementDelta > 50 ? 'elevated visual density' : 'manageable task layout'}. Recommend establishing a clear 45-degree line of sight and clearing immediate 30cm forearm periphery to unblock cognitive momentum.`
+      : metrics.lightingQuality === 'dim_strained' || metrics.screenContrastRatio > 5
       ? `Executive check: your screen contrast is working against you. Working in low ambient light with a bright display elevates cognitive fatigue by up to 35%. Turn on a warm desk lamp or lower display brightness to 60%.`
       : metrics.detectedPosture === 'slumped_forward'
       ? `Workstation scan complete: posture alignment is reasonable, but your shoulders have crept upward. Let's execute a quick physical reset: roll your shoulders back twice, clear two items off your direct desk line, and continue.`
@@ -159,7 +169,9 @@ export function generateLocalRoomScanAnalysis(
 
     phoebe: `Measured equilibrium: Sensory stability index is currently ${score}/100. Ambient brightness is at ${metrics.ambientBrightness}% with a screen contrast ratio of ${metrics.screenContrastRatio}:1. Light balance is ${metrics.lightingQuality.replace('_', ' ')}. Recommended delta: increase ambient lumens or reduce display lux.`,
 
-    holly: `The atmosphere in your room feels ${metrics.lightingQuality === 'dim_strained' ? 'a bit quiet and shadowy' : 'bustling with energy'}. When our surroundings feel cramped or harsh, creative thinking gets squeezed too. Let's open up a little room to breathe.`
+    holly: isEnvironmentScan
+      ? `Atmospheric layout scan: The light angles into your room with a ${metrics.lightingQuality.replace('_', ' ')} warmth. Introducing a touch of living greenery or balancing the light source will make this feel like a true creative sanctuary.`
+      : `The atmosphere in your room feels ${metrics.lightingQuality === 'dim_strained' ? 'a bit quiet and shadowy' : 'bustling with energy'}. When our surroundings feel cramped or harsh, creative thinking gets squeezed too. Let's open up a little room to breathe.`
   };
 
   const actionablePacingCues: string[] = [];
@@ -180,6 +192,10 @@ export function generateLocalRoomScanAnalysis(
   }
 
   actionablePacingCues.push('Follow the 20-20-20 rule: look at an object 20 feet away for 20 seconds.');
+
+  const spatialLayout = isEnvironmentScan
+    ? `Wide environment perspective captured: ${metrics.lightingQuality === 'dim_strained' ? 'Peripheral room falls into deep shadow' : 'Perimeter daylight evenly distributed across workspace'}.`
+    : `Direct posture and workstation perspective captured at 45-degree angle.`;
 
   return {
     id: `scan-${Date.now()}`,
@@ -206,9 +222,13 @@ export function generateLocalRoomScanAnalysis(
         : 'Room conditions are stable with comfortable ambient light.',
       lightingStatus: `${metrics.ambientBrightness}% ambient luminance • ${metrics.lightingQuality.replace('_', ' ')}`,
       clutterIndex: metrics.movementDelta > 60 ? 'high_cognitive_load' : metrics.ambientBrightness < 25 ? 'moderate' : 'low_minimal',
-      recentShift: customNote ? `Client noted: "${customNote}"` : 'Camera lens detected subtle ambient light and posture transition'
+      recentShift: customNote ? `Client noted: "${customNote}"` : 'Camera lens detected subtle ambient light and posture transition',
+      spatialLayoutInsight: spatialLayout
     },
     actionablePacingCues,
-    sovereignPrivacyStatus: 'zero_recorded_airgapped'
+    sovereignPrivacyStatus: 'zero_recorded_airgapped',
+    snapshotPreviewUrl,
+    aiAnalysisSource: 'deterministic_local',
+    cameraFacing
   };
 }

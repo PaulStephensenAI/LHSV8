@@ -12,17 +12,22 @@ import {
   ArrowUp, 
   X, 
   Sparkles, 
-  ChevronRight,
+  ChevronRight, 
   Info,
-  GraduationCap
+  GraduationCap,
+  Eye
 } from 'lucide-react';
 import { ViewSectionId } from '../types';
 import { EcosystemTab } from './LavenderHillEcosystem';
 
 interface SectionNavigatorProps {
   activeViewSection: ViewSectionId;
+  ecosystemTab?: EcosystemTab;
   onSelectViewSection: (section: ViewSectionId) => void;
+  onSelectEcosystemTab?: (tab: EcosystemTab) => void;
   onOpenTeam: () => void;
+  onOpenNotebooks?: () => void;
+  onOpenAmbientScan?: () => void;
   onOpenTools: () => void;
   onOpenPlanner: () => void;
   onOpenCharter: () => void;
@@ -47,8 +52,12 @@ interface NavSectionItem {
 
 export const SectionNavigator: React.FC<SectionNavigatorProps> = ({
   activeViewSection,
+  ecosystemTab = 'team',
   onSelectViewSection,
+  onSelectEcosystemTab,
   onOpenTeam,
+  onOpenNotebooks,
+  onOpenAmbientScan,
   onOpenTools,
   onOpenPlanner,
   onOpenCharter,
@@ -68,19 +77,16 @@ export const SectionNavigator: React.FC<SectionNavigatorProps> = ({
       const scrollY = window.scrollY;
       setShowScrollTop(scrollY > 400);
 
-      const teamEl = document.getElementById('meet-the-team');
-      const ecoEl = document.getElementById('lavender-hill-ecosystem');
-      const plannerEl = document.getElementById('panel-planner');
-      const toolsEl = document.getElementById('panel-tools');
+      const teamEl = document.getElementById('meet-the-team') || document.getElementById('panel-team');
+      const ecoEl = document.getElementById('lavender-hill-ecosystem') || document.getElementById('choose-workspace-lives');
+      const heroEl = document.getElementById('companion-roster-cockpit');
 
-      if (plannerEl && scrollY >= plannerEl.offsetTop - 200) {
-        setActiveAnchor('planner');
-      } else if (toolsEl && scrollY >= toolsEl.offsetTop - 200) {
-        setActiveAnchor('tools');
-      } else if (ecoEl && scrollY >= ecoEl.offsetTop - 200) {
+      if (teamEl && scrollY >= teamEl.offsetTop - 250) {
+        setActiveAnchor('team-area');
+      } else if (ecoEl && scrollY >= ecoEl.offsetTop - 250) {
         setActiveAnchor('ecosystem');
-      } else if (teamEl && scrollY >= teamEl.offsetTop - 200) {
-        setActiveAnchor('team');
+      } else if (heroEl && scrollY >= heroEl.offsetTop - 250) {
+        setActiveAnchor('hero-cockpit');
       } else {
         setActiveAnchor('top');
       }
@@ -98,18 +104,78 @@ export const SectionNavigator: React.FC<SectionNavigatorProps> = ({
   const navItems: NavSectionItem[] = [
     {
       id: 'team',
-      label: 'Meet the Team & Research Leadership',
-      shortLabel: 'Team & Leadership',
+      label: 'Meet the Team & AI Avatars',
+      shortLabel: 'The 6 Avatars',
       category: 'workspace',
       icon: Users,
-      badge: '6 Personas + Founder',
+      badge: '6 Personas',
       color: '#7B5C9E',
-      description: 'Explore Founder Paul Stephensen’s portfolio and interact with all 6 cognitive companions (Toni, Elysian, Phoebe, Kenny, Holly, Ari).',
+      description: 'Explore Founder Paul Stephensen’s portfolio and interact with all 6 cognitive avatars (Toni, Elysian, Phoebe, Kenny, Holly, Ari).',
       action: () => {
         onOpenTeam();
         setIsExpanded(false);
       },
-      isActive: activeViewSection === 'workspace' && activeAnchor === 'team'
+      isActive: activeViewSection === 'workspace' && ecosystemTab === 'team'
+    },
+    ...(onOpenNotebooks ? [{
+      id: 'notebooks',
+      label: 'Embodied Notebooks & Domain Mastery',
+      shortLabel: 'Notebooks',
+      category: 'workspace' as const,
+      icon: BookOpen,
+      badge: 'Zero Hallucinations',
+      color: '#234F56',
+      description: 'Dynamic domain notebooks that avatars embody locally with zero telemetry and verified zero hallucinations.',
+      action: () => {
+        onOpenNotebooks();
+        setIsExpanded(false);
+      },
+      isActive: activeViewSection === 'workspace' && ecosystemTab === 'notebooks'
+    }] : []),
+    ...(onOpenAmbientScan ? [{
+      id: 'ambient-scan',
+      label: 'Ambient Room & Self-Regulation Scanner',
+      shortLabel: 'Room Scanner',
+      category: 'workspace' as const,
+      icon: Eye,
+      badge: 'Opt-in Extra',
+      color: '#7B5C9E',
+      description: 'Sensory lens that observes lighting drop-offs, screen glare, and posture with zero video recording or storage.',
+      action: () => {
+        onOpenAmbientScan();
+        setIsExpanded(false);
+      },
+      isActive: activeViewSection === 'workspace' && ecosystemTab === 'ambient-scan'
+    }] : []),
+    {
+      id: 'tools',
+      label: 'Private Architecture & Sovereign Apps',
+      shortLabel: 'Sovereign Apps',
+      category: 'workspace',
+      icon: Boxes,
+      badge: 'Gia · Angel · FAB',
+      color: '#234F56',
+      description: 'Dedicated standalone applications: Gia (voice), Angel.AI (everyday reflection & health), and FAB (custom tools & design).',
+      action: () => {
+        onOpenTools();
+        setIsExpanded(false);
+      },
+      isActive: activeViewSection === 'workspace' && ecosystemTab === 'tools'
+    },
+    {
+      id: 'planner',
+      label: 'Plan Workspace & Live Cost Estimator',
+      shortLabel: 'Estimator',
+      category: 'workspace',
+      icon: Calculator,
+      badge: '4 Steps',
+      color: '#D4A373',
+      description: 'Interactive 4-step configuration calculator to customize models, hardware targets, and calculate live AUD handover costs.',
+      action: () => {
+        onOpenPlanner();
+        setIsExpanded(false);
+      },
+      isActive: activeViewSection === 'workspace' && ecosystemTab === 'planner'
     },
     ...(onOpenBio ? [{
       id: 'founder-bio',
@@ -126,70 +192,6 @@ export const SectionNavigator: React.FC<SectionNavigatorProps> = ({
       },
       isActive: false
     }] : []),
-    {
-      id: 'top',
-      label: 'Studio Overview & Hero',
-      shortLabel: 'Overview',
-      category: 'workspace',
-      icon: Sparkles,
-      color: '#7B5C9E',
-      description: 'Studio introduction, active companion greeting card, and neurorehab-calm core values.',
-      action: () => {
-        onSelectViewSection('workspace');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        setIsExpanded(false);
-      },
-      isActive: activeViewSection === 'workspace' && activeAnchor === 'top'
-    },
-    {
-      id: 'ecosystem',
-      label: 'Cloud-Based Convenience & Local Sovereignty',
-      shortLabel: 'Cloud vs. Local',
-      category: 'workspace',
-      icon: Layers,
-      badge: 'Dual-Path',
-      color: '#3B4A3F',
-      description: 'Architectural comparison between Path 1 (Vercel Cloud edge sync) and Path 2 (100% Offline Local Sovereign hardware).',
-      action: () => {
-        onSelectViewSection('workspace');
-        setTimeout(() => {
-          const el = document.getElementById('lavender-hill-ecosystem');
-          el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 60);
-        setIsExpanded(false);
-      },
-      isActive: activeViewSection === 'workspace' && activeAnchor === 'ecosystem'
-    },
-    {
-      id: 'tools',
-      label: '2. Private Architecture & Sovereign Tools',
-      shortLabel: 'Sovereign Tools',
-      category: 'workspace',
-      icon: Boxes,
-      badge: '3 Apps',
-      color: '#234F56',
-      description: 'Dedicated standalone applications: Gia (voice), Angel.AI (NDIS rehab & health), and FAB (spatial generative design).',
-      action: () => {
-        onOpenTools();
-        setIsExpanded(false);
-      },
-      isActive: activeViewSection === 'workspace' && activeAnchor === 'tools'
-    },
-    {
-      id: 'planner',
-      label: '3. Plan Workspace (Estimator)',
-      shortLabel: 'Estimator',
-      category: 'workspace',
-      icon: Calculator,
-      badge: '4 Steps',
-      color: '#D4A373',
-      description: 'Interactive 4-step configuration calculator to customize models, hardware targets, and calculate live AUD handover costs.',
-      action: () => {
-        onOpenPlanner();
-        setIsExpanded(false);
-      },
-      isActive: activeViewSection === 'workspace' && activeAnchor === 'planner'
-    },
     {
       id: 'vocal-tones',
       label: 'Vocal Tone & Acoustic Synthesizer',

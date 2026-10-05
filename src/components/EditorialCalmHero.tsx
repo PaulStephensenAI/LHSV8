@@ -12,6 +12,7 @@ import { CompanionId } from '../types';
 import { PERSONAS } from '../data/personasData';
 import { HolographicSphereGraphic } from './HolographicSphereGraphic';
 import { BotanicalLavenderSprig } from './BotanicalLavenderSprig';
+import { EcosystemTab } from './LavenderHillEcosystem';
 
 export type StorylineStage = 
   | 'overview' 
@@ -22,21 +23,25 @@ export type StorylineStage =
 
 interface EditorialCalmHeroProps {
   activeCompanionId: CompanionId;
+  ecosystemTab?: EcosystemTab;
   onSelectCompanion: (id: CompanionId) => void;
   onOpenChat: (id?: CompanionId) => void;
   onOpenConsultation: () => void;
   onScrollToTeam: () => void;
   onSelectStage?: (stage: StorylineStage) => void;
+  onSelectEcosystemTab?: (tab: EcosystemTab) => void;
   activeStage?: StorylineStage;
 }
 
 export const EditorialCalmHero: React.FC<EditorialCalmHeroProps> = ({
   activeCompanionId,
+  ecosystemTab = 'team',
   onSelectCompanion,
   onOpenChat,
   onOpenConsultation,
   onScrollToTeam,
   onSelectStage,
+  onSelectEcosystemTab,
   activeStage = 'overview'
 }) => {
   const activePersona = PERSONAS.find(p => p.id === activeCompanionId) || PERSONAS[0];
@@ -47,12 +52,14 @@ export const EditorialCalmHero: React.FC<EditorialCalmHeroProps> = ({
     }
 
     if (stage === 'meet-the-avatars') {
-      const el = document.getElementById('companion-roster-cockpit') || document.getElementById('panel-team');
+      if (onSelectEcosystemTab) onSelectEcosystemTab('team');
+      const el = document.getElementById('meet-the-team') || document.getElementById('panel-team');
       el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else if (stage === 'your-workspace') {
       const el = document.getElementById('choose-workspace-lives') || document.getElementById('lavender-hill-ecosystem');
       el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else if (stage === 'your-applications') {
+      if (onSelectEcosystemTab) onSelectEcosystemTab('tools');
       const el = document.getElementById('panel-tools') || document.getElementById('your-applications-ribbon');
       el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else if (stage === 'ownership-privacy') {
@@ -74,38 +81,69 @@ export const EditorialCalmHero: React.FC<EditorialCalmHeroProps> = ({
     el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
+  // Compute hierarchical breadcrumbs
+  const getBreadcrumbExploreCategory = () => {
+    switch (ecosystemTab) {
+      case 'team':
+        return { category: 'AI avatars', leaf: activePersona.name };
+      case 'tools':
+        return { category: 'Applications', leaf: 'Sovereign Apps (Gia · Angel · FAB)' };
+      case 'notebooks':
+        return { category: 'Applications', leaf: 'Embodied Notebooks' };
+      case 'ambient-scan':
+        return { category: 'Workspace tools', leaf: 'Room scanner' };
+      case 'planner':
+        return { category: 'Workspace tools', leaf: 'Handover Estimator' };
+      default:
+        return { category: 'AI avatars', leaf: activePersona.name };
+    }
+  };
+
+  const breadcrumbData = getBreadcrumbExploreCategory();
+
   return (
     <section 
       aria-label="Welcome to Lavender Hill Studio"
-      className="space-y-6 sm:space-y-8 animate-in fade-in duration-300"
+      className="space-y-6 sm:space-y-7 animate-in fade-in duration-300"
     >
-      {/* 1. TOP BREADCRUMB TRAIL */}
-      <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs sm:text-sm text-[#7B5C9E]/90 font-sans">
+      {/* 1. TOP BREADCRUMB TRAIL (Reflecting actual hierarchy: Home › Explore › Category › Leaf) */}
+      <nav aria-label="Breadcrumb" className="flex items-center flex-wrap gap-1.5 text-xs sm:text-sm text-[#7B5C9E]/90 font-sans">
         <button 
           type="button" 
-          onClick={() => handleStageClick('overview')}
-          className="hover:text-[#5A3882] transition-colors cursor-pointer"
+          onClick={() => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            if (onSelectStage) onSelectStage('overview');
+          }}
+          className="hover:text-[#5A3882] transition-colors cursor-pointer font-medium"
         >
           Home
         </button>
-        <ChevronRight className="w-3.5 h-3.5 text-[#A78BFA] shrink-0" />
+        <ChevronRight className="w-3.5 h-3.5 text-[#A78BFA] shrink-0" aria-hidden="true" />
         <button 
           type="button" 
-          onClick={() => handleStageClick('meet-the-avatars')}
+          onClick={() => {
+            if (onSelectEcosystemTab) onSelectEcosystemTab('team');
+            const el = document.getElementById('lavender-hill-ecosystem') || document.getElementById('panel-team');
+            el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }}
           className="hover:text-[#5A3882] transition-colors cursor-pointer font-medium"
         >
-          Learn
+          Explore
         </button>
-        <ChevronRight className="w-3.5 h-3.5 text-[#A78BFA] shrink-0" />
-        <span className="text-[#5A5568] font-medium">AI avatars</span>
+        <ChevronRight className="w-3.5 h-3.5 text-[#A78BFA] shrink-0" aria-hidden="true" />
+        <span className="text-[#5A5568] font-medium">{breadcrumbData.category}</span>
+        <ChevronRight className="w-3.5 h-3.5 text-[#A78BFA] shrink-0" aria-hidden="true" />
+        <span className="text-[#181524] font-semibold bg-[#F2ECF9] px-2 py-0.5 rounded-md border border-[#E2D8EE]">
+          {breadcrumbData.leaf}
+        </span>
       </nav>
 
-      {/* 2. MAIN 2-COLUMN HERO BANNER (Directly matching Image Layout) */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch">
+      {/* 2. MAIN 2-COLUMN HERO BANNER (Wider layout, clear heading, useful avatar preview, one obvious primary action) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-stretch bg-white/70 p-6 sm:p-8 rounded-3xl border border-[#E5E0D8] shadow-xs">
         
-        {/* LEFT COLUMN: Editorial Value Proposition */}
-        <div className="lg:col-span-7 flex flex-col justify-center space-y-4 sm:space-y-5 pr-0 lg:pr-4">
-          <div className="space-y-2">
+        {/* LEFT COLUMN: Wider Editorial Value Proposition */}
+        <div className="lg:col-span-7 flex flex-col justify-between space-y-4 pr-0 lg:pr-4">
+          <div className="space-y-2.5">
             <span className="text-xs sm:text-sm font-mono font-bold tracking-widest text-[#7B5C9E] uppercase block">
               HUMAN-CENTRED AI AVATARS
             </span>
@@ -113,23 +151,33 @@ export const EditorialCalmHero: React.FC<EditorialCalmHeroProps> = ({
               A familiar guide. <br className="hidden sm:inline" />
               A workspace you own.
             </h1>
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-serif font-medium text-[#7B5C9E] pt-0.5">
+            <h2 className="text-lg sm:text-xl lg:text-2xl font-serif font-medium text-[#7B5C9E] pt-0.5">
               Technology that restores calm and serves human agency.
             </h2>
+            <p className="text-sm sm:text-base text-[#5A5568] leading-relaxed max-w-xl font-sans pt-1">
+              Lavender Hill Studio builds calm, human-centred AI avatars and private offline workspaces. Meet six guides with different roles, try an interactive conversation, or compare cloud convenience with 100% offline local sovereignty.
+            </p>
           </div>
 
-          <p className="text-sm sm:text-base text-[#5A5568] leading-relaxed max-w-xl font-sans">
-            Meet six AI guides with different roles. Explore a workspace built around your needs, with cloud or local options.
-          </p>
+          {/* Obvious Primary Action + Clear Secondary Pathway */}
+          <div className="pt-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <button
+              type="button"
+              onClick={() => onOpenChat(activePersona.id)}
+              className="px-6 py-3 rounded-full bg-[#234F56] hover:bg-[#1B3E44] text-[#F5F2EB] font-serif font-bold text-sm sm:text-base shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-2 group cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4 text-[#D4A373]" />
+              <span>Try talking to {activePersona.name}</span>
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </button>
 
-          <div className="pt-1">
             <button
               type="button"
               onClick={scrollToOwnership}
-              className="inline-flex items-center gap-1.5 text-sm sm:text-base font-serif font-bold text-[#7B5C9E] hover:text-[#5A3882] transition-colors group cursor-pointer underline underline-offset-4 decoration-[#C4B5FD] hover:decoration-[#7B5C9E]"
+              className="px-4 py-2.5 rounded-full text-xs sm:text-sm font-serif font-semibold text-[#7B5C9E] hover:text-[#5A3882] hover:bg-[#F2ECF9]/80 transition-colors inline-flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <span>How ownership works</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
@@ -146,7 +194,7 @@ export const EditorialCalmHero: React.FC<EditorialCalmHeroProps> = ({
             {/* Top Label */}
             <div className="relative z-10 flex items-center justify-between">
               <span className="text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider text-[#7B5C9E]">
-                MEET YOUR GUIDES
+                ACTIVE AVATAR PREVIEW
               </span>
               <span 
                 className="text-[10px] font-mono px-2 py-0.5 rounded-full font-semibold border transition-colors"
@@ -166,7 +214,7 @@ export const EditorialCalmHero: React.FC<EditorialCalmHeroProps> = ({
               {/* Left Visual: 3D Holographic Sphere + Botanical Sprig Accent */}
               <div className="col-span-5 relative flex items-center justify-center">
                 <HolographicSphereGraphic 
-                  size={145} 
+                  size={140} 
                   primaryColor={activePersona.themeColor.primary}
                 />
                 <BotanicalLavenderSprig 
@@ -175,18 +223,18 @@ export const EditorialCalmHero: React.FC<EditorialCalmHeroProps> = ({
               </div>
 
               {/* Right Persona Information + 6-Pill Switcher Grid */}
-              <div className="col-span-7 space-y-3.5 pl-1">
+              <div className="col-span-7 space-y-3 pl-1">
                 <div>
                   <h3 className="text-2xl sm:text-3xl font-serif font-bold text-[#181524] tracking-tight">
                     {activePersona.name}
                   </h3>
                   <p className="text-xs sm:text-sm text-[#5A5568] font-sans font-medium mt-0.5 line-clamp-2">
-                    {activePersona.id === 'toni' ? 'Lead guide & planning' : activePersona.role}
+                    {activePersona.id === 'toni' ? 'Lead guide & sovereign planning' : activePersona.role}
                   </p>
                 </div>
 
                 {/* 6 Personas Pill Grid (2 Columns × 3 Rows) */}
-                <div className="grid grid-cols-3 gap-1.5" role="tablist" aria-label="Select a companion guide">
+                <div className="grid grid-cols-3 gap-1.5" role="tablist" aria-label="Select an avatar guide">
                   {PERSONAS.map((p) => {
                     const isSelected = p.id === activeCompanionId;
                     return (
@@ -218,7 +266,7 @@ export const EditorialCalmHero: React.FC<EditorialCalmHeroProps> = ({
                 onClick={() => onOpenChat(activePersona.id)}
                 className="w-full py-2.5 px-4 rounded-xl bg-white hover:bg-[#F2ECF9] text-[#181524] hover:text-[#5A3882] border border-[#D5C6EC] font-serif font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 shadow-2xs group cursor-pointer"
               >
-                <span>Explore {activePersona.name}&rsquo;s role</span>
+                <span>Ask {activePersona.name} a question</span>
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform text-[#7B5C9E]" />
               </button>
             </div>
@@ -227,18 +275,18 @@ export const EditorialCalmHero: React.FC<EditorialCalmHeroProps> = ({
         </div>
       </div>
 
-      {/* 3. STORYLINE 5-STAGE SEGMENTED NAVIGATION BAR */}
+      {/* 3. SUGGESTED JOURNEY: Understand → Explore → Try → Compare → Enquire */}
       <nav 
-        aria-label="Studio storyline navigation"
-        className="p-1.5 bg-[#F2ECF9]/70 border border-[#E2D8EE] rounded-2xl sm:rounded-full shadow-xs backdrop-blur-xs flex items-center justify-between overflow-x-auto scrollbar-none"
+        aria-label="Visitor Suggested Journey"
+        className="p-1.5 bg-[#F2ECF9]/70 border border-[#E2D8EE] rounded-2xl shadow-xs backdrop-blur-xs flex items-center justify-between overflow-x-auto scrollbar-none"
       >
         <div className="flex items-center gap-1 sm:gap-1.5 w-full justify-between sm:justify-start">
           {[
-            { id: 'overview', label: 'Overview' },
-            { id: 'meet-the-avatars', label: 'Meet the avatars' },
-            { id: 'your-workspace', label: 'Your workspace' },
-            { id: 'your-applications', label: 'Your applications' },
-            { id: 'ownership-privacy', label: 'Ownership & privacy' }
+            { id: 'overview', step: '1. Understand', label: 'Studio Overview' },
+            { id: 'meet-the-avatars', step: '2. Explore', label: 'Meet the Avatars' },
+            { id: 'your-applications', step: '3. Try', label: 'Try Applications' },
+            { id: 'your-workspace', step: '4. Compare', label: 'Cloud vs Local' },
+            { id: 'ownership-privacy', step: '5. Enquire', label: 'Ownership & Handover' }
           ].map((item) => {
             const isActive = activeStage === item.id;
             return (
@@ -246,13 +294,14 @@ export const EditorialCalmHero: React.FC<EditorialCalmHeroProps> = ({
                 key={item.id}
                 type="button"
                 onClick={() => handleStageClick(item.id as StorylineStage)}
-                className={`px-3.5 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-medium transition-all whitespace-nowrap cursor-pointer flex-1 sm:flex-initial text-center ${
+                className={`px-3.5 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all whitespace-nowrap cursor-pointer flex-1 sm:flex-initial text-center ${
                   isActive
                     ? 'bg-[#7B5C9E] text-white font-bold shadow-xs'
                     : 'text-[#5A5568] hover:text-[#181524] hover:bg-white/60'
                 }`}
               >
-                {item.label}
+                <span className="opacity-75 text-[10px] sm:text-xs block font-mono font-normal">{item.step}</span>
+                <span>{item.label}</span>
               </button>
             );
           })}
@@ -292,7 +341,7 @@ export const EditorialCalmHero: React.FC<EditorialCalmHeroProps> = ({
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-[#5A5568] leading-relaxed">
-                For access across devices and distributed teams. Hosted in your own account.
+                For access across devices and distributed teams. Hosted in your own account with verified zero training on your data.
               </p>
               <div className="pt-1">
                 <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-serif font-bold text-[#7B5C9E] group-hover:text-[#5A3882]">
@@ -322,7 +371,7 @@ export const EditorialCalmHero: React.FC<EditorialCalmHeroProps> = ({
                 </span>
               </div>
               <p className="text-xs sm:text-sm text-[#5A5568] leading-relaxed">
-                For private, offline work on your own devices. Designed to keep data on your device.
+                For private, 100% offline work on your own tablet or computer. Complete data dignity with zero internet connection required.
               </p>
               <div className="pt-1">
                 <span className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-serif font-bold text-[#3B4A3F] group-hover:text-[#234F56]">
@@ -344,7 +393,7 @@ export const EditorialCalmHero: React.FC<EditorialCalmHeroProps> = ({
         {/* Left Side: Your applications quiet summary */}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs sm:text-sm">
           <span className="font-serif font-bold text-[#181524]">
-            Your applications
+            Specialist tools &amp; applications:
           </span>
           <span className="text-[#ECE7DE] hidden sm:inline">|</span>
           <span className="text-[#5A5568]">
@@ -374,3 +423,4 @@ export const EditorialCalmHero: React.FC<EditorialCalmHeroProps> = ({
     </section>
   );
 };
+

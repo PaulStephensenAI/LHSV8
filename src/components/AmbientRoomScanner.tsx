@@ -21,7 +21,14 @@ import {
   Send,
   Lock,
   ChevronRight,
-  Info
+  Info,
+  SwitchCamera,
+  RotateCcw,
+  Layers,
+  Focus,
+  Check,
+  Upload,
+  Play
 } from 'lucide-react';
 import { CompanionId, PersonaData, RoomScanMetrics, RoomScanResult } from '../types';
 import { PERSONAS } from '../data/personasData';
@@ -54,10 +61,19 @@ export const AmbientRoomScanner: React.FC<AmbientRoomScannerProps> = ({
 
   // Camera & Stream State
   const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
+  const [cameraFacing, setCameraFacing] = useState<'environment' | 'user'>('environment');
   const [cameraError, setCameraError] = useState<string | null>(null);
-  const [isMirror, setIsMirror] = useState<boolean>(true);
+  const [isMirror, setIsMirror] = useState<boolean>(false);
   const [isPrivacyBlanked, setIsPrivacyBlanked] = useState<boolean>(false);
   const [isScanning, setIsScanning] = useState<boolean>(false);
+
+  // Physical Environment Snapshot State
+  const [capturedSnapshot, setCapturedSnapshot] = useState<string | null>(null);
+  const [snapshotTimestamp, setSnapshotTimestamp] = useState<string | null>(null);
+  const [isShutterFlashing, setIsShutterFlashing] = useState<boolean>(false);
+  const [viewMode, setViewMode] = useState<'live' | 'snapshot'>('live');
+  const [previewModalOpen, setPreviewModalOpen] = useState<boolean>(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   
   // Real-time Optical Metrics (Calculated from Video Canvas)
   const [liveMetrics, setLiveMetrics] = useState<RoomScanMetrics>({
@@ -96,7 +112,7 @@ export const AmbientRoomScanner: React.FC<AmbientRoomScannerProps> = ({
   // Synchronize result when companion changes
   useEffect(() => {
     const currentMetrics = useLiveFeed ? liveMetrics : selectedScenario.metrics;
-    setScanResult(generateLocalRoomScanAnalysis(activeCompanionId, currentMetrics, clientNote));
+    setScanResult(generateLocalRoomScanAnalysis(activeCompanionId, currentMetrics, clientNote, cameraFacing, capturedSnapshot || undefined));
   }, [activeCompanionId]);
 
   // Breathing Pacer Cycle (Inhale 4s -> Hold 4s -> Exhale 6s)
@@ -125,21 +141,30 @@ export const AmbientRoomScanner: React.FC<AmbientRoomScannerProps> = ({
     return () => clearInterval(timer);
   }, [isBreathingPacerActive, breathPhase]);
 
-  // Start Camera Stream
-  const startCamera = async () => {
+  // Start Camera Stream with configurable facingMode (Room Lens vs Posture Lens)
+  const startCamera = async (overrideFacing?: 'environment' | 'user') => {
     setCameraError(null);
+    const targetFacing = overrideFacing || cameraFacing;
     try {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(t => t.stop());
+        streamRef.current = null;
       }
-      const stream = await navigator.mediaDevices.getUserMedia({
+      const constraints: MediaStreamConstraints = {
         video: {
-          width: { ideal: 640 },
-          height: { ideal: 480 },
-          facingMode: 'user'
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          facingMode: targetFacing
         },
         audio: false
-      });
+      };
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+      } catch {
+        // Fallback to basic video constraint if exact facingMode is not supported on device
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      }
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -148,11 +173,22 @@ export const AmbientRoomScanner: React.FC<AmbientRoomScannerProps> = ({
       setIsCameraActive(true);
       setUseLiveFeed(true);
       setIsPrivacyBlanked(false);
+      setViewMode('live');
+      setIsMirror(targetFacing === 'user');
     } catch (err: any) {
       console.warn('Camera access denied or unavailable:', err);
-      setCameraError('Camera access was not granted. You can still test with our realistic room presets below!');
+      setCameraError('Camera access was not granted or webcam is unavailable. You can take/upload a photo with your device camera or test with our room presets below!');
       setIsCameraActive(false);
       setUseLiveFeed(false);
+    }
+  };
+
+  // Toggle Camera Facing Mode (Environment / Rear vs User / Front)
+  const toggleCameraFacing = async () => {
+    const nextFacing = cameraFacing === 'environment' ? 'user' : 'environment';
+    setCameraFacing(nextFacing);
+    if (isCameraActive) {
+      await startCamera(nextFacing);
     }
   };
 
@@ -167,6 +203,66 @@ export const AmbientRoomScanner: React.FC<AmbientRoomScannerProps> = ({
     }
     setIsCameraActive(false);
     setUseLiveFeed(false);
+  };
+
+  // Capture Physical Environment Snapshot from Camera Video Element
+  const captureSnapshot = useCallback((): string | null => {
+    if (!videoRef.current || isPrivacyBlanked) return null;
+    const video = videoRef.current;
+    if (video.videoWidth === 0 || video.videoHeight === 0) return null;
+
+    const captureCanvas = document.createElement('canvas');
+    captureCanvas.width = video.videoWidth;
+    captureCanvas.height = video.videoHeight;
+    const ctx = captureCanvas.getContext('2d');
+    if (!ctx) return null;
+
+    if (isMirror) {
+      ctx.translate(captureCanvas.width, 0);
+      ctx.scale(-1, 1);
+    }
+    ctx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
+
+    const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.88);
+    setCapturedSnapshot(dataUrl);
+    setSnapshotTimestamp(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    setViewMode('snapshot');
+
+    // Trigger visual shutter flash feedback
+    setIsShutterFlashing(true);
+    setTimeout(() => setIsShutterFlashing(false), 200);
+
+    return dataUrl;
+  }, [isMirror, isPrivacyBlanked]);
+
+  // Handle Snapshot from native device camera or file input
+  const handleDeviceCameraCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (dataUrl) {
+        setCapturedSnapshot(dataUrl);
+        setSnapshotTimestamp(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+        setViewMode('snapshot');
+        setUseLiveFeed(true);
+        setIsShutterFlashing(true);
+        setTimeout(() => setIsShutterFlashing(false), 200);
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  // Retake Snapshot and return to live stream
+  const retakeSnapshot = () => {
+    setCapturedSnapshot(null);
+    setViewMode('live');
+    if (!isCameraActive) {
+      startCamera();
+    }
   };
 
   // Process video frames locally in real time (zero recording)
@@ -255,13 +351,15 @@ export const AmbientRoomScanner: React.FC<AmbientRoomScannerProps> = ({
   }, []);
 
   // Execute Room & Self-Regulation Scan
-  const handleExecuteScan = async () => {
+  const handleExecuteScan = async (forcedSnapshot?: string) => {
     setIsScanning(true);
     const activeMetrics = useLiveFeed ? liveMetrics : selectedScenario.metrics;
 
-    let snapshotBase64 = '';
-    if (useLiveFeed && canvasRef.current && !isPrivacyBlanked) {
-      snapshotBase64 = canvasRef.current.toDataURL('image/jpeg', 0.6);
+    let snapshotToSend = forcedSnapshot || (viewMode === 'snapshot' ? capturedSnapshot : null);
+
+    // If on live feed and haven't frozen a snapshot yet, capture the current frame on the fly
+    if (!snapshotToSend && useLiveFeed && isCameraActive && !isPrivacyBlanked) {
+      snapshotToSend = captureSnapshot();
     }
 
     try {
@@ -269,9 +367,10 @@ export const AmbientRoomScanner: React.FC<AmbientRoomScannerProps> = ({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          imageBase64: snapshotBase64 || undefined,
+          imageBase64: snapshotToSend || undefined,
           companionId: activeCompanionId,
           clientNote: clientNote.trim() || undefined,
+          cameraFacing,
           metrics: activeMetrics
         })
       });
@@ -279,6 +378,9 @@ export const AmbientRoomScanner: React.FC<AmbientRoomScannerProps> = ({
       if (response.ok) {
         const data = await response.json();
         if (data.scan) {
+          if (!data.scan.snapshotPreviewUrl && snapshotToSend) {
+            data.scan.snapshotPreviewUrl = snapshotToSend;
+          }
           setScanResult(data.scan);
           setIsScanning(false);
           return;
@@ -289,7 +391,13 @@ export const AmbientRoomScanner: React.FC<AmbientRoomScannerProps> = ({
     }
 
     // High fidelity deterministic fallback
-    const localResult = generateLocalRoomScanAnalysis(activeCompanionId, activeMetrics, clientNote);
+    const localResult = generateLocalRoomScanAnalysis(
+      activeCompanionId,
+      activeMetrics,
+      clientNote,
+      cameraFacing,
+      snapshotToSend || undefined
+    );
     setScanResult(localResult);
     setIsScanning(false);
   };
@@ -357,8 +465,18 @@ export const AmbientRoomScanner: React.FC<AmbientRoomScannerProps> = ({
         <div className="lg:col-span-5 space-y-4">
           <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[#ECE7DE] shadow-sm space-y-4">
             
+            {/* Hidden file input for native device camera capture */}
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              accept="image/*" 
+              capture="environment" 
+              onChange={handleDeviceCameraCapture} 
+              className="hidden" 
+            />
+
             {/* Source Mode Toggle: Live Camera vs. Room Preset Simulators */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <Eye className="w-4 h-4 text-[#7B5C9E]" />
                 <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#5A5568]">
@@ -366,118 +484,262 @@ export const AmbientRoomScanner: React.FC<AmbientRoomScannerProps> = ({
                 </span>
               </div>
 
-              <div className="flex items-center gap-1 bg-[#FAF8F5] p-1 rounded-xl border border-[#ECE7DE]">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!isCameraActive) startCamera();
-                    setUseLiveFeed(true);
-                  }}
-                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer ${
-                    useLiveFeed && isCameraActive
-                      ? 'bg-[#7B5C9E] text-white shadow-2xs'
-                      : 'text-[#5A5568] hover:text-[#181524]'
-                  }`}
-                >
-                  <Camera className="w-3.5 h-3.5" />
-                  <span>Live Lens</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    stopCamera();
-                    setUseLiveFeed(false);
-                  }}
-                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer ${
-                    !useLiveFeed
-                      ? 'bg-[#234F56] text-[#F5F2EB] shadow-2xs'
-                      : 'text-[#5A5568] hover:text-[#181524]'
-                  }`}
-                >
-                  <Sliders className="w-3.5 h-3.5" />
-                  <span>Preset Rooms</span>
-                </button>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {useLiveFeed && (
+                  <button
+                    type="button"
+                    onClick={toggleCameraFacing}
+                    title={`Switch to ${cameraFacing === 'environment' ? 'Posture (Front) Lens' : 'Room (Rear) Lens'}`}
+                    className="px-2.5 py-1 rounded-lg text-xs font-mono font-semibold bg-[#FAF8F5] text-[#5A5568] hover:text-[#181524] border border-[#ECE7DE] hover:border-[#D5C6EC] transition-all flex items-center gap-1 cursor-pointer"
+                  >
+                    <SwitchCamera className="w-3.5 h-3.5 text-[#7B5C9E]" />
+                    <span>{cameraFacing === 'environment' ? 'Room Lens' : 'Posture Lens'}</span>
+                  </button>
+                )}
+
+                <div className="flex items-center gap-1 bg-[#FAF8F5] p-1 rounded-xl border border-[#ECE7DE]">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!isCameraActive && !capturedSnapshot) startCamera();
+                      setUseLiveFeed(true);
+                    }}
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer ${
+                      useLiveFeed
+                        ? 'bg-[#7B5C9E] text-white shadow-2xs'
+                        : 'text-[#5A5568] hover:text-[#181524]'
+                    }`}
+                  >
+                    <Camera className="w-3.5 h-3.5" />
+                    <span>Live Lens</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      stopCamera();
+                      setUseLiveFeed(false);
+                      setViewMode('live');
+                    }}
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 cursor-pointer ${
+                      !useLiveFeed
+                        ? 'bg-[#234F56] text-[#F5F2EB] shadow-2xs'
+                        : 'text-[#5A5568] hover:text-[#181524]'
+                    }`}
+                  >
+                    <Sliders className="w-3.5 h-3.5" />
+                    <span>Preset Rooms</span>
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* Viewport Box */}
             <div className="relative rounded-2xl overflow-hidden bg-[#181524] aspect-[4/3] flex items-center justify-center border border-black/10 shadow-inner group">
               
+              {/* Shutter Flash Animation */}
+              {isShutterFlashing && (
+                <div className="absolute inset-0 bg-white z-50 pointer-events-none transition-opacity duration-200 animate-out fade-out" />
+              )}
+
               {/* Hidden Canvas for local telemetry */}
               <canvas ref={canvasRef} className="hidden" />
 
-              {/* LIVE CAMERA MODE */}
-              {useLiveFeed && isCameraActive ? (
-                <>
-                  <video
-                    ref={videoRef}
-                    playsInline
-                    autoPlay
-                    muted
-                    className={`w-full h-full object-cover transition-transform ${
-                      isMirror ? 'scale-x-[-1]' : ''
-                    } ${isPrivacyBlanked ? 'filter blur-2xl grayscale' : ''}`}
-                  />
+              {/* MODE 1: LIVE LENS MODE */}
+              {useLiveFeed ? (
+                viewMode === 'snapshot' && capturedSnapshot ? (
+                  /* SUB-MODE 1A: SNAPSHOT CAPTURED REVIEW */
+                  <div className="relative w-full h-full">
+                    <img
+                      src={capturedSnapshot}
+                      alt="Captured Workspace Snapshot"
+                      className="w-full h-full object-cover"
+                    />
 
-                  {/* Translucent HUD Overlay */}
-                  <div className="absolute inset-0 pointer-events-none p-3 flex flex-col justify-between">
-                    {/* Top Status Ribbon */}
-                    <div className="flex items-center justify-between text-[10px] font-mono text-white/90">
-                      <div className="flex items-center gap-1.5 bg-black/60 px-2 py-1 rounded-full backdrop-blur-md">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                        <span>LIVE SENSORY SCAN</span>
+                    {/* Spatial Analysis Framing Overlay */}
+                    <div className="absolute inset-0 pointer-events-none p-3 flex flex-col justify-between">
+                      {/* Top Ribbon */}
+                      <div className="flex items-center justify-between text-[10px] font-mono text-white/90">
+                        <div className="flex items-center gap-1.5 bg-black/75 px-2.5 py-1 rounded-full backdrop-blur-md border border-white/20">
+                          <Check className="w-3 h-3 text-emerald-400" />
+                          <span className="font-bold tracking-wide">PHYSICAL SNAPSHOT CAPTURED</span>
+                        </div>
+                        <div className="bg-black/75 px-2 py-1 rounded-full backdrop-blur-md border border-white/20 text-white/80">
+                          {snapshotTimestamp}
+                        </div>
                       </div>
-                      <div className="bg-black/60 px-2 py-1 rounded-full backdrop-blur-md">
-                        ZERO RETENTION
+
+                      {/* Center Spatial Reticle */}
+                      <div className="self-center border border-dashed border-white/40 w-44 h-44 rounded-2xl flex flex-col items-center justify-center bg-black/15 backdrop-blur-[1px]">
+                        <Focus className="w-6 h-6 text-white/60 mb-1" />
+                        <span className="text-[9px] font-mono text-white/70 uppercase tracking-widest text-center px-2">
+                          Spatial Geometry Ready
+                        </span>
+                      </div>
+
+                      {/* Bottom Details Ribbon */}
+                      <div className="bg-black/75 backdrop-blur-md p-2 rounded-xl text-[10px] font-mono text-white/80 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                          <span>Lens: {cameraFacing === 'environment' ? 'Room Panorama' : 'Posture Ergonomics'}</span>
+                        </div>
+                        <span className="text-white/60">Zero Storage Attested</span>
                       </div>
                     </div>
 
-                    {/* Center Posture Guide Ring */}
-                    <div className="self-center border border-dashed border-white/20 w-32 h-44 rounded-full flex items-center justify-center">
-                      <span className="text-[9px] font-mono text-white/40 uppercase tracking-widest">
-                        Posture Guide
-                      </span>
-                    </div>
-
-                    {/* Bottom Telemetry Ticker */}
-                    <div className="bg-black/70 backdrop-blur-md p-2 rounded-xl text-[10px] font-mono text-white/80 grid grid-cols-3 gap-2">
-                      <div>
-                        <span className="text-white/50 block">Light</span>
-                        <span className="font-bold text-amber-300">{liveMetrics.ambientBrightness}% Lux</span>
-                      </div>
-                      <div>
-                        <span className="text-white/50 block">Motion</span>
-                        <span className="font-bold text-cyan-300">{liveMetrics.movementDelta}% Delta</span>
-                      </div>
-                      <div>
-                        <span className="text-white/50 block">Posture</span>
-                        <span className="font-bold text-emerald-300 capitalize">{liveMetrics.detectedPosture}</span>
-                      </div>
+                    {/* Snapshot Action Overlay Controls */}
+                    <div className="absolute top-3 right-3 flex items-center gap-1.5 z-20">
+                      <button
+                        type="button"
+                        onClick={retakeSnapshot}
+                        title="Retake Snapshot (Discard and resume live stream)"
+                        className="px-2.5 py-1.5 rounded-lg bg-black/80 hover:bg-black text-white text-xs font-semibold flex items-center gap-1.5 shadow-md cursor-pointer transition-all"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Retake</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!isCameraActive) startCamera();
+                          setViewMode('live');
+                        }}
+                        title="Return to Live Video Stream"
+                        className="p-1.5 rounded-lg bg-black/80 hover:bg-black text-white text-xs shadow-md cursor-pointer transition-all"
+                      >
+                        <Play className="w-3.5 h-3.5 text-cyan-400" />
+                      </button>
                     </div>
                   </div>
+                ) : isCameraActive ? (
+                  /* SUB-MODE 1B: LIVE STREAMING CAMERA */
+                  <>
+                    <video
+                      ref={videoRef}
+                      playsInline
+                      autoPlay
+                      muted
+                      className={`w-full h-full object-cover transition-transform ${
+                        isMirror ? 'scale-x-[-1]' : ''
+                      } ${isPrivacyBlanked ? 'filter blur-2xl grayscale' : ''}`}
+                    />
 
-                  {/* Camera Controls Overlay */}
-                  <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      type="button"
-                      onClick={() => setIsPrivacyBlanked(!isPrivacyBlanked)}
-                      title={isPrivacyBlanked ? 'Reveal Camera' : 'Cover Lens (Privacy Blur)'}
-                      className="p-1.5 rounded-lg bg-black/70 hover:bg-black/90 text-white text-xs cursor-pointer"
-                    >
-                      {isPrivacyBlanked ? <CameraOff className="w-3.5 h-3.5 text-rose-400" /> : <Camera className="w-3.5 h-3.5" />}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsMirror(!isMirror)}
-                      title="Flip Mirror"
-                      className="p-1.5 rounded-lg bg-black/70 hover:bg-black/90 text-white text-xs cursor-pointer"
-                    >
-                      <RefreshCw className="w-3.5 h-3.5" />
-                    </button>
+                    {/* Translucent HUD Overlay */}
+                    <div className="absolute inset-0 pointer-events-none p-3 flex flex-col justify-between">
+                      {/* Top Status Ribbon */}
+                      <div className="flex items-center justify-between text-[10px] font-mono text-white/90">
+                        <div className="flex items-center gap-1.5 bg-black/60 px-2 py-1 rounded-full backdrop-blur-md">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                          <span>LIVE SENSORY SCAN ({cameraFacing === 'environment' ? 'ROOM' : 'POSTURE'})</span>
+                        </div>
+                        <div className="bg-black/60 px-2 py-1 rounded-full backdrop-blur-md">
+                          ZERO RETENTION
+                        </div>
+                      </div>
+
+                      {/* Center Spatial Framing Guide */}
+                      <div className="self-center border border-dashed border-white/25 w-36 h-48 rounded-2xl flex items-center justify-center">
+                        <span className="text-[9px] font-mono text-white/50 uppercase tracking-widest text-center px-2">
+                          {cameraFacing === 'environment' ? 'Room Spatial Grid' : 'Posture Guide'}
+                        </span>
+                      </div>
+
+                      {/* Bottom Telemetry Ticker & Shutter Button */}
+                      <div className="space-y-2 pointer-events-auto">
+                        <div className="flex items-center justify-center">
+                          <button
+                            type="button"
+                            onClick={() => captureSnapshot()}
+                            title="Capture Snapshot of Room Environment"
+                            className="group/shutter px-4 py-1.5 rounded-full bg-white/95 hover:bg-white text-[#181524] text-xs font-mono font-bold shadow-lg border border-[#7B5C9E] flex items-center gap-2 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+                          >
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#7B5C9E] group-hover/shutter:animate-ping" />
+                            <Camera className="w-3.5 h-3.5 text-[#7B5C9E]" />
+                            <span>Capture Snapshot</span>
+                          </button>
+                        </div>
+
+                        <div className="bg-black/75 backdrop-blur-md p-2 rounded-xl text-[10px] font-mono text-white/80 grid grid-cols-3 gap-2">
+                          <div>
+                            <span className="text-white/50 block">Light</span>
+                            <span className="font-bold text-amber-300">{liveMetrics.ambientBrightness}% Lux</span>
+                          </div>
+                          <div>
+                            <span className="text-white/50 block">Motion</span>
+                            <span className="font-bold text-cyan-300">{liveMetrics.movementDelta}% Delta</span>
+                          </div>
+                          <div>
+                            <span className="text-white/50 block">Posture</span>
+                            <span className="font-bold text-emerald-300 capitalize">{liveMetrics.detectedPosture}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Camera Controls Overlay */}
+                    <div className="absolute top-3 right-3 flex items-center gap-1.5 opacity-90 group-hover:opacity-100 transition-opacity z-20">
+                      <button
+                        type="button"
+                        onClick={toggleCameraFacing}
+                        title={`Switch to ${cameraFacing === 'environment' ? 'Posture Lens (Front)' : 'Room Lens (Rear)'}`}
+                        className="p-1.5 rounded-lg bg-black/70 hover:bg-black/90 text-white text-xs cursor-pointer transition-colors"
+                      >
+                        <SwitchCamera className="w-3.5 h-3.5 text-cyan-400" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsPrivacyBlanked(!isPrivacyBlanked)}
+                        title={isPrivacyBlanked ? 'Reveal Camera' : 'Cover Lens (Privacy Blur)'}
+                        className="p-1.5 rounded-lg bg-black/70 hover:bg-black/90 text-white text-xs cursor-pointer transition-colors"
+                      >
+                        {isPrivacyBlanked ? <CameraOff className="w-3.5 h-3.5 text-rose-400" /> : <Camera className="w-3.5 h-3.5" />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsMirror(!isMirror)}
+                        title="Flip Mirror"
+                        className="p-1.5 rounded-lg bg-black/70 hover:bg-black/90 text-white text-xs cursor-pointer transition-colors"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  /* SUB-MODE 1C: CAMERA INACTIVE LAUNCHER */
+                  <div className="p-6 text-center space-y-4 max-w-sm text-white">
+                    <div className="w-16 h-16 rounded-3xl bg-white/10 mx-auto flex items-center justify-center text-white border border-white/15 shadow-inner">
+                      <Camera className="w-8 h-8 text-[#D5C6EC]" />
+                    </div>
+                    <div>
+                      <h4 className="font-serif font-bold text-lg text-white">
+                        Physical Environment Lens
+                      </h4>
+                      <p className="text-xs text-white/75 mt-1 leading-relaxed">
+                        Capture physical workspace lighting, screen glare, room clutter, and posture. Zero video or photos are ever saved.
+                      </p>
+                    </div>
+
+                    <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => startCamera()}
+                        className="w-full sm:w-auto px-4 py-2.5 rounded-xl font-bold text-xs bg-[#7B5C9E] hover:bg-[#684A87] text-white shadow-md flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+                      >
+                        <Camera className="w-4 h-4" />
+                        <span>Start Camera Lens</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full sm:w-auto px-3 py-2.5 rounded-xl font-semibold text-xs bg-white/15 hover:bg-white/25 text-white border border-white/20 flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>Device Camera App</span>
+                      </button>
+                    </div>
                   </div>
-                </>
+                )
               ) : (
-                /* PRESET SIMULATOR MODE */
+                /* MODE 2: PRESET SIMULATOR MODE */
                 <div className="p-6 text-center space-y-3 max-w-sm text-white">
                   <div className="w-14 h-14 rounded-2xl bg-white/10 mx-auto flex items-center justify-center text-3xl shadow-inner border border-white/10">
                     {selectedScenario.roomIcon}
@@ -506,7 +768,16 @@ export const AmbientRoomScanner: React.FC<AmbientRoomScannerProps> = ({
             {cameraError && (
               <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                <p>{cameraError}</p>
+                <div className="space-y-1">
+                  <p>{cameraError}</p>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="text-[11px] font-bold text-[#7B5C9E] underline hover:text-[#5A3882] cursor-pointer"
+                  >
+                    Open native device camera / photo capture instead
+                  </button>
+                </div>
               </div>
             )}
 
@@ -568,26 +839,91 @@ export const AmbientRoomScanner: React.FC<AmbientRoomScannerProps> = ({
               />
             </div>
 
-            {/* Scan Action Button */}
-            <button
-              type="button"
-              onClick={handleExecuteScan}
-              disabled={isScanning}
-              className="w-full py-3 rounded-2xl font-bold text-sm text-white shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer hover:brightness-105 active:scale-[0.99]"
-              style={{ backgroundColor: activePersona.themeColor.primary }}
-            >
-              {isScanning ? (
-                <>
-                  <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Analyzing Room &amp; Pacing with {activePersona.name}...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4" />
-                  <span>Scan Room &amp; Receive Guidance</span>
-                </>
-              )}
-            </button>
+            {/* Action Buttons: Context-Aware based on Live/Snapshot/Preset state */}
+            {useLiveFeed && viewMode === 'snapshot' && capturedSnapshot ? (
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => handleExecuteScan(capturedSnapshot)}
+                  disabled={isScanning}
+                  className="w-full py-3.5 rounded-2xl font-bold text-sm text-white shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer hover:brightness-105 active:scale-[0.99]"
+                  style={{ backgroundColor: activePersona.themeColor.primary }}
+                >
+                  {isScanning ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Analyzing Snapshot with {activePersona.name}...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      <span>Analyze Snapshot with {activePersona.name}</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={retakeSnapshot}
+                  disabled={isScanning}
+                  className="w-full py-2.5 rounded-xl font-semibold text-xs text-[#5A5568] hover:text-[#181524] bg-[#FAF8F5] hover:bg-[#F5F2EB] border border-[#ECE7DE] flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Retake Snapshot</span>
+                </button>
+              </div>
+            ) : useLiveFeed && isCameraActive ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleExecuteScan()}
+                  disabled={isScanning}
+                  className="py-3 rounded-2xl font-bold text-xs text-white shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer hover:brightness-105 active:scale-[0.99]"
+                  style={{ backgroundColor: activePersona.themeColor.primary }}
+                >
+                  {isScanning ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Analyzing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Capture &amp; Analyze</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => captureSnapshot()}
+                  disabled={isScanning}
+                  className="py-3 rounded-2xl font-bold text-xs bg-[#FAF8F5] text-[#181524] border border-[#ECE7DE] hover:bg-[#F5F2EB] shadow-2xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <Camera className="w-3.5 h-3.5 text-[#7B5C9E]" />
+                  <span>Freeze Snapshot</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handleExecuteScan()}
+                disabled={isScanning}
+                className="w-full py-3 rounded-2xl font-bold text-sm text-white shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer hover:brightness-105 active:scale-[0.99]"
+                style={{ backgroundColor: activePersona.themeColor.primary }}
+              >
+                {isScanning ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Analyzing Room &amp; Pacing with {activePersona.name}...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    <span>Scan Room &amp; Receive Guidance</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
 
           {/* Somatic Breathing Pacer Card */}
@@ -702,6 +1038,49 @@ export const AmbientRoomScanner: React.FC<AmbientRoomScannerProps> = ({
               </div>
             </div>
 
+            {/* Snapshot Preview Banner (if snapshot exists) */}
+            {(scanResult.snapshotPreviewUrl || capturedSnapshot) && (
+              <div className="p-3.5 rounded-2xl bg-[#FAF8F5] border border-[#ECE7DE] flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div 
+                    onClick={() => setPreviewModalOpen(true)}
+                    className="relative w-14 h-11 rounded-xl overflow-hidden bg-black shrink-0 border border-[#D5C6EC] cursor-pointer group shadow-2xs"
+                  >
+                    <img 
+                      src={scanResult.snapshotPreviewUrl || capturedSnapshot!} 
+                      alt="Analyzed Workspace Snapshot" 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                    />
+                    <div className="absolute inset-0 bg-black/25 group-hover:bg-transparent flex items-center justify-center transition-colors">
+                      <Maximize2 className="w-3.5 h-3.5 text-white opacity-80 group-hover:opacity-100" />
+                    </div>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-[#F2ECF9] text-[#684A87] border border-[#D5C6EC]">
+                        {scanResult.aiAnalysisSource === 'gemini_multimodal' ? 'AI Spatial Vision (Gemini)' : 'Sovereign Optical Analysis'}
+                      </span>
+                      <span className="text-[10px] font-mono text-[#8C827A]">
+                        {scanResult.cameraFacing === 'environment' ? 'Room Lens' : 'Posture Lens'} • {scanResult.timestamp}
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#5A5568] truncate mt-0.5">
+                      Physical environment snapshot analyzed under zero-recording guarantee
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setPreviewModalOpen(true)}
+                  className="text-xs font-semibold text-[#7B5C9E] hover:text-[#5A3882] shrink-0 px-2.5 py-1.5 rounded-lg bg-white border border-[#ECE7DE] hover:border-[#D5C6EC] shadow-2xs transition-all cursor-pointer flex items-center gap-1"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>Inspect</span>
+                </button>
+              </div>
+            )}
+
             {/* Companion's Spoken Observation */}
             <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#ECE7DE] space-y-2">
               <div className="flex items-center gap-2 text-xs font-bold text-[#7B5C9E]">
@@ -755,6 +1134,19 @@ export const AmbientRoomScanner: React.FC<AmbientRoomScannerProps> = ({
                     <span className="font-semibold capitalize text-[#181524]">{scanResult.environmentChanges.clutterIndex.replace('_', ' ')}</span>
                   </div>
                 </div>
+
+                {scanResult.environmentChanges.spatialLayoutInsight && (
+                  <div className="text-[11px] font-sans text-[#3B3450] bg-[#FAF8F5] p-2.5 rounded-xl border border-[#ECE7DE] space-y-1 mt-1">
+                    <div className="flex items-center gap-1 text-[10px] font-mono font-bold text-[#7B5C9E] uppercase tracking-wider">
+                      <Layers className="w-3 h-3" />
+                      <span>Spatial Architecture Insight</span>
+                    </div>
+                    <p className="text-xs text-[#5A5568] leading-relaxed">
+                      {scanResult.environmentChanges.spatialLayoutInsight}
+                    </p>
+                  </div>
+                )}
+
                 {scanResult.environmentChanges.recentShift && (
                   <div className="text-[10px] font-mono text-[#7B5C9E] bg-[#F2ECF9] p-2 rounded-lg truncate">
                     {scanResult.environmentChanges.recentShift}
@@ -862,6 +1254,80 @@ export const AmbientRoomScanner: React.FC<AmbientRoomScannerProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Snapshot Inspection Modal */}
+      {previewModalOpen && (scanResult.snapshotPreviewUrl || capturedSnapshot) && (
+        <div 
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setPreviewModalOpen(false)}
+        >
+          <div 
+            className="bg-white rounded-3xl max-w-2xl w-full p-6 border border-[#ECE7DE] shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-[#ECE7DE]">
+              <div className="flex items-center gap-2">
+                <Focus className="w-5 h-5 text-[#7B5C9E]" />
+                <h3 className="font-serif font-bold text-lg text-[#181524]">
+                  Physical Environment Snapshot
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPreviewModalOpen(false)}
+                className="px-3 py-1 rounded-xl text-xs font-semibold bg-[#FAF8F5] text-[#5A5568] hover:text-[#181524] border border-[#ECE7DE] cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="relative rounded-2xl overflow-hidden bg-black aspect-[4/3] border border-black/10">
+              <img
+                src={scanResult.snapshotPreviewUrl || capturedSnapshot!}
+                alt="High-resolution physical workspace snapshot"
+                className="w-full h-full object-contain"
+              />
+              <div className="absolute bottom-3 left-3 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-xl text-[11px] font-mono text-white/90 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                <span>Captured: {snapshotTimestamp || scanResult.timestamp}</span>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#ECE7DE] space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-[#181524]">
+                <span>{activePersona.name}&apos;s Spatial Assessment:</span>
+                <span className="font-mono text-[10px] text-[#7B5C9E]">
+                  Equilibrium: {scanResult.equilibriumScore}/100
+                </span>
+              </div>
+              <p className="text-xs text-[#5A5568] leading-relaxed">
+                &ldquo;{scanResult.companionObservation}&rdquo;
+              </p>
+              {scanResult.environmentChanges.spatialLayoutInsight && (
+                <p className="text-[11px] text-[#7B5C9E] font-medium pt-1 border-t border-[#ECE7DE]">
+                  {scanResult.environmentChanges.spatialLayoutInsight}
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between text-[11px] font-mono text-[#8C827A] pt-1">
+              <span className="flex items-center gap-1.5 text-emerald-700">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                Zero Video or Image Storage • Sovereign Private Lens
+              </span>
+              <button
+                type="button"
+                onClick={() => setPreviewModalOpen(false)}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-[#7B5C9E] text-white hover:bg-[#684A87] cursor-pointer"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

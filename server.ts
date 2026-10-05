@@ -1103,6 +1103,7 @@ app.post('/api/room-scan', async (req, res) => {
       imageBase64,
       companionId = 'ari',
       clientNote = '',
+      cameraFacing = 'environment',
       metrics = {
         ambientBrightness: 50,
         movementDelta: 20,
@@ -1116,24 +1117,38 @@ app.post('/api/room-scan', async (req, res) => {
     let geminiResult: any = null;
 
     if (ai && imageBase64 && typeof imageBase64 === 'string' && imageBase64.length > 50) {
-      const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '');
-      const candidateModels = ['gemini-flash-lite-latest', 'gemini-3.6-flash', 'gemini-3.8-flash', 'gemini-flash-latest'];
+      let mimeType = 'image/jpeg';
+      const match = imageBase64.match(/^data:(image\/[a-zA-Z+]+);base64,/);
+      if (match) {
+        mimeType = match[1];
+      }
+      const cleanBase64 = imageBase64.replace(/^data:image\/[a-zA-Z+]+;base64,/, '');
+      const candidateModels = ['gemini-3.8-flash', 'gemini-flash-latest', 'gemini-3.1-flash-lite'];
       
-      const prompt = `You are ${companionId.toUpperCase()}, a compassionate, human-centred digital companion under the AIEE ethical framework.
-The client has granted temporary, zero-recording sovereign camera permission to scan their room and posture for gentle self-regulation and awareness of environmental changes.
-Review the image and respond with a structured JSON object strictly conforming to this schema:
+      const isEnvironmentMode = cameraFacing === 'environment';
+      const spatialFocusDescription = isEnvironmentMode
+        ? `The user captured a physical environment snapshot of their room/workspace using the Camera API (Room Lens: environment view). Analyze the physical room setting: desk arrangement, natural vs artificial lighting sources, screen positioning, visual clutter zones, and atmospheric harmony.`
+        : `The user captured a seated workstation snapshot using the Camera API (Posture Lens: user view). Analyze the ergonomic setup: head/neck tilt, shoulder tension, screen glare reflection, and physical comfort.`;
+
+      const prompt = `You are ${companionId.toUpperCase()}, a compassionate, human-centred digital companion under the Lavender Hill Studio AIEE ethical framework.
+${spatialFocusDescription}
+${clientNote ? `User context/note: "${clientNote}"` : ''}
+
+Review this physical workspace snapshot carefully and provide an empathetic, constructive spatial analysis.
+Respond ONLY with a valid JSON object matching this schema:
 {
-  "companionObservation": "A warm, personal, 2-3 sentence reflection in ${companionId}'s voice observing lighting, room atmosphere, and physical posture. Non-judgmental, soothing, and respectful.",
+  "companionObservation": "A warm, personal, 2-3 sentence reflection in ${companionId}'s voice evaluating what you observe in the physical space/lighting/room. Non-judgmental, respectful, and observant.",
   "equilibriumScore": 75,
-  "physicalCues": ["string describing neck/shoulder/eye posture", "string describing movement/tension"],
+  "physicalCues": ["string describing posture, head position, or physical space cues", "string describing movement or strain indicators"],
   "breathingPaceRecommendation": "e.g. Soft Inhale 4s • Gentle Hold 4s • Lengthened Exhale 7s",
-  "postureGuidance": "1-2 gentle sentences on adjusting spinal position or screen angle",
-  "environmentSummary": "1-2 sentences on ambient lighting, clutter, or room contrast",
-  "lightingStatus": "e.g. 45% ambient light • low screen glare",
-  "clutterIndex": "low_minimal",
+  "postureGuidance": "1-2 gentle sentences on adjusting physical position, chair support, or screen angle",
+  "environmentSummary": "1-2 sentences summarizing ambient lighting, clutter level, and room contrast",
+  "lightingStatus": "e.g. 52% ambient daylight • minimal glare",
+  "clutterIndex": "low_minimal" | "moderate" | "high_cognitive_load",
+  "spatialLayoutInsight": "1-2 sentences evaluating the physical arrangement of the desk, monitor, lamp, or room perimeter",
   "actionablePacingCues": ["step 1", "step 2", "step 3"]
 }
-Never diagnose, pathologize, or shame. Focus on empowerment, somatic breathing, and gentle workspace comfort.`;
+Strict Rule: Never diagnose, pathologize, or shame. Focus on human dignity, calm pacing, and comfortable physical spaces.`;
 
       for (const model of candidateModels) {
         try {
@@ -1141,62 +1156,77 @@ Never diagnose, pathologize, or shame. Focus on empowerment, somatic breathing, 
             model,
             contents: [
               {
-                inlineData: {
-                  data: cleanBase64,
-                  mimeType: 'image/jpeg'
-                }
-              },
-              prompt
+                role: 'user',
+                parts: [
+                  { text: prompt },
+                  {
+                    inlineData: {
+                      data: cleanBase64,
+                      mimeType
+                    }
+                  }
+                ]
+              }
             ],
             config: {
               responseMimeType: 'application/json',
-              temperature: 0.4
+              temperature: companionId === 'ari' ? 0.3 : 0.5
             }
           });
-          const response = await withTimeout(genPromise, 6500, `Gemini Vision [${model}] timeout`);
+          const response = await withTimeout(genPromise, 7500, `Gemini Spatial Vision [${model}] timeout`);
           if (response?.text) {
             const parsed = JSON.parse(response.text);
             geminiResult = {
               id: `scan-${Date.now()}`,
               timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
               companionId,
-              equilibriumScore: typeof parsed.equilibriumScore === 'number' ? parsed.equilibriumScore : 75,
+              equilibriumScore: typeof parsed.equilibriumScore === 'number' ? Math.max(30, Math.min(100, parsed.equilibriumScore)) : 78,
               companionObservation: parsed.companionObservation || '',
               clientSelfRegulation: {
-                physicalCues: Array.isArray(parsed.physicalCues) ? parsed.physicalCues : ['Relaxed spinal position'],
+                physicalCues: Array.isArray(parsed.physicalCues) ? parsed.physicalCues : ['Balanced workstation alignment'],
                 breathingPaceRecommendation: parsed.breathingPaceRecommendation || 'Inhale 4s • Hold 4s • Exhale 6s',
                 postureGuidance: parsed.postureGuidance || 'Keep neck balanced and relaxed.'
               },
               environmentChanges: {
-                summary: parsed.environmentSummary || 'Room conditions scanned.',
+                summary: parsed.environmentSummary || 'Room conditions scanned and analyzed.',
                 lightingStatus: parsed.lightingStatus || 'Balanced ambient illumination',
                 clutterIndex: parsed.clutterIndex || 'low_minimal',
-                recentShift: clientNote ? `Client note: "${clientNote}"` : 'Lens captured momentary room and somatic geometry'
+                recentShift: clientNote ? `Client note: "${clientNote}"` : 'Camera lens captured physical workspace geometry',
+                spatialLayoutInsight: parsed.spatialLayoutInsight || (isEnvironmentMode ? 'Perimeter room light and workspace layout evaluated.' : 'Desk elevation and screen angle evaluated.')
               },
-              actionablePacingCues: Array.isArray(parsed.actionablePacingCues) ? parsed.actionablePacingCues : [
+              actionablePacingCues: Array.isArray(parsed.actionablePacingCues) && parsed.actionablePacingCues.length > 0 ? parsed.actionablePacingCues : [
                 'Take a slow diaphragmatic breath',
                 'Soften your gaze away from the monitor for 20 seconds',
                 'Unclench your jaw and drop shoulders'
               ],
-              sovereignPrivacyStatus: 'zero_recorded_airgapped'
+              sovereignPrivacyStatus: 'zero_recorded_airgapped',
+              snapshotPreviewUrl: imageBase64,
+              aiAnalysisSource: 'gemini_multimodal',
+              cameraFacing
             };
             break;
           }
         } catch (err: any) {
-          console.log(`[RoomScan API] Model ${model} unavailable, fallback will be used: ${err?.message || err}`);
+          console.log(`[RoomScan API] Model ${model} unavailable or timed out: ${err?.message || err}`);
         }
       }
     }
 
     // If Gemini result was successfully generated, use it; otherwise use our rich local heuristic generator
-    const finalResult = geminiResult || generateLocalRoomScanAnalysis(companionId, metrics, clientNote);
+    const finalResult = geminiResult || generateLocalRoomScanAnalysis(
+      companionId as any,
+      metrics,
+      clientNote,
+      cameraFacing as any,
+      imageBase64
+    );
 
     // Record an attestation in Chronus ledger certifying zero-recording sovereign audit
     chronusLedger.unshift({
       id: `chron-${Date.now().toString(36)}`,
       timestamp: new Date().toISOString(),
       personaId: companionId,
-      action: `Ambient Room & Self-Regulation Scan completed (Equilibrium Score: ${finalResult.equilibriumScore}/100, Zero Video Retained)`,
+      action: `AI Spatial Snapshot Analysis processed for physical environment (Zero retention, Score: ${finalResult.equilibriumScore}/100)`,
       hash: '0x' + Math.random().toString(16).substring(2, 10),
       deviceSyncStatus: 'synced-local-sqlite'
     });
@@ -1205,7 +1235,8 @@ Never diagnose, pathologize, or shame. Focus on empowerment, somatic breathing, 
       success: true,
       scan: finalResult,
       airGapped: true,
-      zeroRetentionConfirmed: true
+      zeroRetentionConfirmed: true,
+      aiPowered: Boolean(geminiResult)
     });
   } catch (scanErr: any) {
     console.error('[RoomScan Error]', scanErr);
