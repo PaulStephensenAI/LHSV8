@@ -1,13 +1,4 @@
-import React, { useState } from 'react';
-import { 
-  Calculator, 
-  Sparkles, 
-  Layers, 
-  Sliders, 
-  SlidersHorizontal,
-  Compass,
-  ArrowRight
-} from 'lucide-react';
+import React from 'react';
 import { BespokeEstimator } from './BespokeEstimator';
 
 interface WorkspacePlannerProps {

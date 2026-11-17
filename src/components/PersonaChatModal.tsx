@@ -10,31 +10,22 @@ import {
   Minus,
   Maximize2,
   ShieldCheck, 
-  ShieldAlert,
-  Bot,
   Sparkles,
   ChevronLeft,
   ChevronRight,
-  Database,
-  Lock,
-  Tablet,
   CheckCircle2,
   Search,
   BookOpen,
   FileText,
-  ExternalLink,
-  MessageSquare,
   Filter,
   ArrowRight,
   ChevronDown,
   ChevronUp,
   Tag,
-  CornerDownLeft,
   Eye,
-  User,
-  Edit3
+  User
 } from 'lucide-react';
-import { CompanionId, ChatMessage, PersonaData, FAQCategory, FAQItem, FAQSearchResult } from '../types';
+import { CompanionId, ChatMessage, PersonaData, FAQCategory, FAQItem } from '../types';
 import { PERSONAS } from '../data/personasData';
 import { FAQ_CATEGORIES, FAQ_KNOWLEDGE_BASE } from '../data/faqKnowledgeData';
 import { searchFAQIndex, getProactiveFAQSuggestion, formatFAQAsChatMessage } from '../utils/faqSearchIndex';
@@ -247,8 +238,8 @@ export const PersonaChatModal: React.FC<PersonaChatModalProps> = ({
   isOpen,
   onClose,
   activeCompanionId,
-  onSelectCompanion,
-  isOfflineMode,
+  onSelectCompanion: _onSelectCompanion,
+  isOfflineMode: _isOfflineMode,
   activeViewSection = 'workspace',
   activeModal = '',
   sessionId = 'live-visitor-session',

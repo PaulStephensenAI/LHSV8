@@ -9,10 +9,6 @@ import {
   Heart, 
   Copy, 
   Check, 
-  Compass, 
-  Waves, 
-  Eye, 
-  BookOpen,
   MapPin,
   Anchor
 } from 'lucide-react';

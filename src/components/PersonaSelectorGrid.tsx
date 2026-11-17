@@ -1,19 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import { 
-  Compass, 
-  ShieldCheck, 
-  LineChart, 
-  Layers, 
-  Activity, 
-  Stethoscope, 
   Sparkles, 
   ArrowRight,
-  Shield,
-  Clock,
   Cpu,
-  Heart,
-  LayoutTemplate,
-  Waves,
   Search,
   X,
   GraduationCap,
@@ -22,9 +11,7 @@ import {
   Database,
   Boxes,
   Calendar,
-  MapPin,
-  Info,
-  Camera
+  MapPin
 } from 'lucide-react';
 import { CompanionId, PersonaData } from '../types';
 import { PERSONAS } from '../data/personasData';
@@ -39,21 +26,6 @@ interface PersonaSelectorGridProps {
   onOpenBio?: () => void;
   onOpenConsultation?: () => void;
 }
-
-const ICON_MAP: Record<string, React.ElementType> = {
-  Compass,
-  ShieldCheck,
-  LineChart,
-  Layers,
-  Activity,
-  Stethoscope,
-  LayoutTemplate,
-  Shield,
-  Waves,
-  Cpu,
-  Heart,
-  Clock
-};
 
 export const PersonaSelectorGrid: React.FC<PersonaSelectorGridProps> = ({
   selectedId,

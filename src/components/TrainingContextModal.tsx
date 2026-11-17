@@ -3,16 +3,12 @@ import {
   FileText, 
   X, 
   Search, 
-  CheckCircle2, 
-  Layers, 
   ShieldCheck, 
   Cpu, 
-  Sparkles,
-  ExternalLink,
   Copy,
   Check
 } from 'lucide-react';
-import { STUDIO_TRAINING_FILES, StudioTrainingFile } from '../data/trainingFilesData';
+import { STUDIO_TRAINING_FILES } from '../data/trainingFilesData';
 
 interface TrainingContextModalProps {
   isOpen: boolean;

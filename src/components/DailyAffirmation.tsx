@@ -9,15 +9,7 @@ import {
   Copy,
   Check,
   Calendar,
-  Compass,
-  ShieldCheck,
-  LineChart,
-  Layers,
-  Activity,
-  Stethoscope,
-  Smile,
   Zap,
-  BookmarkCheck,
   MessageSquare,
   ArrowRight
 } from 'lucide-react';
@@ -265,15 +257,6 @@ const PERSONA_AFFIRMATION_BANKS: Record<CompanionId, AffirmationEntry[]> = {
   ]
 };
 
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
-  Compass,
-  ShieldCheck,
-  LineChart,
-  Layers,
-  Activity,
-  Stethoscope
-};
-
 export const DailyAffirmation: React.FC<DailyAffirmationProps> = ({
   activePersona,
   onOpenChat,
@@ -436,8 +419,6 @@ export const DailyAffirmation: React.FC<DailyAffirmationProps> = ({
       // Ignore
     }
   }, [currentAffirmation, isFavorited, favoritesList]);
-
-  const IconComp = ICON_MAP[activePersona.avatarIcon] || Sparkles;
 
   return (
     <div

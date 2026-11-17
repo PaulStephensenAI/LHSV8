@@ -1,16 +1,11 @@
 import React, { useEffect } from 'react';
 import { 
-  ShieldCheck, 
   HeartHandshake, 
   Lock, 
   Award, 
-  Sparkles, 
   X, 
-  CheckCircle2,
   Database,
-  BrainCircuit,
-  EyeOff,
-  Compass
+  BrainCircuit
 } from 'lucide-react';
 import { OfficialLavenderHillIcon } from './BrandLogos';
 

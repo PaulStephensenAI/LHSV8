@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { 
   Eye, 
   Camera, 
@@ -13,15 +13,9 @@ import {
   CheckCircle2, 
   Sliders, 
   AlertCircle,
-  HelpCircle,
   Maximize2,
-  Minimize2,
-  Volume2,
-  VolumeX,
   Send,
   Lock,
-  ChevronRight,
-  Info,
   SwitchCamera,
   RotateCcw,
   Layers,
@@ -39,7 +33,6 @@ import {
   generateLocalRoomScanAnalysis 
 } from '../data/roomScanData';
 import { CompanionAvatar } from './CompanionAvatar';
-import { Tooltip } from './Tooltip';
 
 export interface AmbientRoomScannerProps {
   activeCompanionId: CompanionId;
@@ -305,7 +298,7 @@ export const AmbientRoomScanner: React.FC<AmbientRoomScannerProps> = ({
         const avgMotion = prev ? Math.min(100, Math.round((motionDiff / pixelCount / 255) * 300)) : 15;
         prevFrameDataRef.current = new Uint8ClampedArray(data);
 
-        setLiveMetrics(prevMetrics => {
+        setLiveMetrics(() => {
           // Detect lighting quality
           let lightQual: RoomScanMetrics['lightingQuality'] = 'soft_balanced';
           if (avgBrightness < 25) lightQual = 'dim_strained';

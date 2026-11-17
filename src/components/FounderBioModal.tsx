@@ -3,14 +3,11 @@ import {
   X, 
   GraduationCap, 
   Sparkles, 
-  BookOpen, 
   ShieldCheck, 
-  Heart, 
   ArrowRight,
   Quote,
   Scale,
   Cpu,
-  Lock,
   Boxes,
   Database
 } from 'lucide-react';

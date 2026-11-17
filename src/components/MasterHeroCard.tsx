@@ -14,9 +14,7 @@ import {
   Smile,
   Heart,
   BookOpen,
-  Database,
   Eye,
-  Camera,
   ShieldCheck
 } from 'lucide-react';
 import { CompanionId } from '../types';

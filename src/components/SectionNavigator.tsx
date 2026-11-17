@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { 
   Compass, 
   Users, 
-  Layers, 
   Boxes, 
   Calculator, 
   Volume2, 
@@ -11,7 +10,6 @@ import {
   BookOpen, 
   ArrowUp, 
   X, 
-  Sparkles, 
   ChevronRight, 
   Info,
   GraduationCap,
@@ -54,7 +52,7 @@ export const SectionNavigator: React.FC<SectionNavigatorProps> = ({
   activeViewSection,
   ecosystemTab = 'team',
   onSelectViewSection,
-  onSelectEcosystemTab,
+  onSelectEcosystemTab: _onSelectEcosystemTab,
   onOpenTeam,
   onOpenNotebooks,
   onOpenAmbientScan,
@@ -67,29 +65,13 @@ export const SectionNavigator: React.FC<SectionNavigatorProps> = ({
   className = ''
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
-  const [activeAnchor, setActiveAnchor] = useState<string>('top');
   const [showScrollTop, setShowScrollTop] = useState<boolean>(false);
   const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
 
-  // Monitor scroll position to highlight active section and show back-to-top button
+  // Monitor scroll position to show back-to-top button
   useEffect(() => {
     const handleScroll = () => {
-      const scrollY = window.scrollY;
-      setShowScrollTop(scrollY > 400);
-
-      const teamEl = document.getElementById('meet-the-team') || document.getElementById('panel-team');
-      const ecoEl = document.getElementById('lavender-hill-ecosystem') || document.getElementById('choose-workspace-lives');
-      const heroEl = document.getElementById('companion-roster-cockpit');
-
-      if (teamEl && scrollY >= teamEl.offsetTop - 250) {
-        setActiveAnchor('team-area');
-      } else if (ecoEl && scrollY >= ecoEl.offsetTop - 250) {
-        setActiveAnchor('ecosystem');
-      } else if (heroEl && scrollY >= heroEl.offsetTop - 250) {
-        setActiveAnchor('hero-cockpit');
-      } else {
-        setActiveAnchor('top');
-      }
+      setShowScrollTop(window.scrollY > 400);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });

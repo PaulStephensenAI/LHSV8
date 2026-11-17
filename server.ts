@@ -48,7 +48,7 @@ export const aiRateLimiter = rateLimit({
   legacyHeaders: false,
   statusCode: 429,
   message: { error: 'Rate limit exceeded. Please wait a moment before sending more queries.' },
-  handler: (req, res, _next, options) => {
+  handler: (_req, res, _next, options) => {
     res.status(429).json(options.message);
   }
 });
@@ -122,7 +122,7 @@ export async function ensureServerInitialized(): Promise<void> {
 }
 
 // Ensure RAG & knowledge are initialized for incoming serverless and dev requests
-app.use(async (req, res, next) => {
+app.use(async (req, _res, next) => {
   if (!isServerInitialized && req.path.startsWith('/api')) {
     try {
       await ensureServerInitialized();
@@ -268,7 +268,7 @@ const lifecycleTraceLedger: RequestLifecycleTrace[] = [];
  * Automatically transforms dense text into a highly scannable, neurodivergent-affirming
  * layout using distinct headers, bullet points, and bold leading keys.
  */
-function applyScannabilityGuardrail(text: string, companionId: string, force: boolean = false): string {
+function applyScannabilityGuardrail(text: string, _companionId: string, force: boolean = false): string {
   if (!text || typeof text !== 'string') return text;
 
   const trimmed = text.trim();
@@ -289,7 +289,6 @@ function applyScannabilityGuardrail(text: string, companionId: string, force: bo
 
   const rawParagraphs = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean);
   const formattedSections: string[] = [];
-  let headerAdded = hasHeaders;
 
   for (let idx = 0; idx < rawParagraphs.length; idx++) {
     const paragraph = rawParagraphs[idx];
@@ -297,7 +296,6 @@ function applyScannabilityGuardrail(text: string, companionId: string, force: bo
     // Preserve existing markdown headers
     if (paragraph.startsWith('#')) {
       formattedSections.push(paragraph);
-      headerAdded = true;
       continue;
     }
 
@@ -1005,13 +1003,13 @@ Grounded in **Sister Elizabeth Kenny’s rehabilitation philosophy**, our goal i
 }
 
 // API Routes
-app.get('/api/health', (req, res) => {
+app.get('/api/health', (_req, res) => {
   const hasKey = !!process.env.GEMINI_API_KEY;
   res.json({
     status: 'ok',
     geminiConfigured: hasKey,
     framework: 'ToniAI™ Lavender Hill Studio',
-    version: '4.2.0-aiee',
+    version: '1.1.3',
     trainingFilesLoaded: loadedTrainingFilesMeta.length,
     companions: ['toni', 'elysian', 'phoebe', 'holly', 'ari', 'kenny'],
     timestamp: new Date().toISOString()
@@ -1026,7 +1024,7 @@ app.get('/api/health/proxy-ip', (req, res) => {
   });
 });
 
-app.get('/api/training-files', (req, res) => {
+app.get('/api/training-files', (_req, res) => {
   loadTrainingKnowledge();
   res.json({
     totalFiles: loadedTrainingFilesMeta.length,
@@ -1035,7 +1033,7 @@ app.get('/api/training-files', (req, res) => {
   });
 });
 
-app.get('/api/chronus-ledger', (req, res) => {
+app.get('/api/chronus-ledger', (_req, res) => {
   res.json({
     ledger: chronusLedger,
     totalRecords: chronusLedger.length,
@@ -1180,7 +1178,7 @@ app.get('/api/session/ui-ops/:sessionId', (req, res) => {
 });
 
 // Dual-Notebook RAG Status & Retrieval Metrics
-app.get('/api/rag/status', (req, res) => {
+app.get('/api/rag/status', (_req, res) => {
   try {
     const counts = ragPipeline.getCounts();
     res.json({
@@ -2166,7 +2164,7 @@ app.post('/api/chat', validateChatPayload, async (req, res) => {
   }
 });
 
-// Permanent Author Photo Server Endpoints
+// Permanent Author Photo Server Endpoint (Read Only)
 const authorPhotoDir = path.resolve(process.cwd(), 'storage');
 const authorPhotoPath = path.join(authorPhotoDir, 'author_paul_stephensen.jpg');
 
@@ -2177,44 +2175,6 @@ app.get('/api/author/photo', (_req, res) => {
     return res.sendFile(authorPhotoPath);
   }
   return res.status(404).json({ error: 'Author photo not found' });
-});
-
-app.post('/api/author/photo', (req, res) => {
-  try {
-    const { imageBase64 } = req.body || {};
-    if (!imageBase64 || typeof imageBase64 !== 'string') {
-      return res.status(400).json({ error: 'imageBase64 required' });
-    }
-    const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '');
-    const buffer = Buffer.from(cleanBase64, 'base64');
-    if (!fs.existsSync(authorPhotoDir)) {
-      fs.mkdirSync(authorPhotoDir, { recursive: true });
-    }
-    fs.writeFileSync(authorPhotoPath, buffer);
-    const publicDir = path.resolve(process.cwd(), 'public');
-    if (!fs.existsSync(publicDir)) {
-      fs.mkdirSync(publicDir, { recursive: true });
-    }
-    fs.writeFileSync(path.join(publicDir, 'author_paul_stephensen.jpg'), buffer);
-    return res.json({ success: true, url: '/api/author/photo' });
-  } catch (err: any) {
-    return res.status(500).json({ error: err?.message || 'Failed to save photo' });
-  }
-});
-
-app.delete('/api/author/photo', (_req, res) => {
-  try {
-    if (fs.existsSync(authorPhotoPath)) {
-      fs.unlinkSync(authorPhotoPath);
-    }
-    const publicPhoto = path.resolve(process.cwd(), 'public', 'author_paul_stephensen.jpg');
-    if (fs.existsSync(publicPhoto)) {
-      fs.unlinkSync(publicPhoto);
-    }
-    return res.json({ success: true, message: 'Author photo cleared' });
-  } catch (err: any) {
-    return res.status(500).json({ error: err?.message || 'Failed to delete photo' });
-  }
 });
 
 // FAQ Search & Knowledge Base Endpoints
@@ -2246,7 +2206,7 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
-    app.get('*', (req, res) => {
+    app.get('*', (_req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

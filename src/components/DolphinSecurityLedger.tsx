@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Database, 
-  ShieldCheck, 
   Clock, 
   Lock, 
   Tablet, 

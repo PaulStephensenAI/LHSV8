@@ -4,9 +4,7 @@ import {
   Cloud, 
   Laptop, 
   Sparkles,
-  ChevronRight,
-  ShieldCheck,
-  Check
+  ChevronRight
 } from 'lucide-react';
 import { CompanionId } from '../types';
 import { PERSONAS } from '../data/personasData';
@@ -38,8 +36,8 @@ export const EditorialCalmHero: React.FC<EditorialCalmHeroProps> = ({
   ecosystemTab = 'team',
   onSelectCompanion,
   onOpenChat,
-  onOpenConsultation,
-  onScrollToTeam,
+  onOpenConsultation: _onOpenConsultation,
+  onScrollToTeam: _onScrollToTeam,
   onSelectStage,
   onSelectEcosystemTab,
   activeStage = 'overview'
@@ -76,7 +74,7 @@ export const EditorialCalmHero: React.FC<EditorialCalmHeroProps> = ({
     el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const scrollToDeploymentChoice = (target: 'cloud' | 'local') => {
+  const scrollToDeploymentChoice = (_target: 'cloud' | 'local') => {
     const el = document.getElementById('lavender-hill-ecosystem') || document.getElementById('choose-workspace-lives');
     el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };

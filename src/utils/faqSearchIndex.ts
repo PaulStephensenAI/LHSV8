@@ -124,7 +124,7 @@ export function getProactiveFAQSuggestion(userText: string): FAQItem | null {
 /**
  * Format an FAQ Item as an authoritative, grounded chat message with citations.
  */
-export function formatFAQAsChatMessage(item: FAQItem, personaName: string = 'Elysian'): string {
+export function formatFAQAsChatMessage(item: FAQItem, _personaName: string = 'Elysian'): string {
   return `### Grounded Studio Knowledge • ${item.question}
 
 ${item.detailedAnswer}

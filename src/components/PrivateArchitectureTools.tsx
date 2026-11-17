@@ -7,17 +7,8 @@ import {
   ShieldCheck, 
   Database, 
   Lock, 
-  Sparkles, 
   ArrowRight, 
-  Tablet, 
-  Laptop, 
   CheckCircle2, 
-  FileText, 
-  Layers, 
-  ExternalLink,
-  Info,
-  Terminal,
-  Activity,
   HardDrive
 } from 'lucide-react';
 import { Tooltip } from './Tooltip';
@@ -32,7 +23,7 @@ interface PrivateArchitectureToolsProps {
 export const PrivateArchitectureTools: React.FC<PrivateArchitectureToolsProps> = ({
   onOpenLedger,
   onOpenCharter,
-  onOpenTrainingFiles,
+  onOpenTrainingFiles: _onOpenTrainingFiles,
   onOpenConsultation
 }) => {
   const [selectedAppId, setSelectedAppId] = useState<'gia' | 'angel' | 'fab'>('gia');

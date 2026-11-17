@@ -1,28 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
-  Sparkles, 
-  Database, 
-  ShieldCheck, 
-  Layers, 
   Sliders, 
   Volume2, 
   Maximize2, 
-  Clock, 
-  BookOpen, 
-  Lock, 
-  CheckCircle2,
-  ArrowRight,
-  Tablet,
-  Cloud,
   MessageSquare,
   FileText,
   Mic,
-  MicOff,
   Radio,
-  Calendar,
-  Compass,
-  GraduationCap,
-  Calculator,
   Video
 } from 'lucide-react';
 import { CompanionId, ViewSectionId } from './types';
@@ -41,12 +25,10 @@ import { BrandGuideModal } from './components/BrandGuideModal';
 import { SimulationTutorialModal, SimulationToolType } from './components/SimulationTutorialModal';
 import { useVoiceControl } from './hooks/useVoiceControl';
 import { VoiceControlWidget } from './components/VoiceControlWidget';
-import { CompanionAvatar } from './components/CompanionAvatar';
 import { MasterHeroCard } from './components/MasterHeroCard';
 import { EditorialCalmHero, StorylineStage } from './components/EditorialCalmHero';
 import { SectionNavigator } from './components/SectionNavigator';
 import { EcosystemTab } from './components/LavenderHillEcosystem';
-import { Tooltip } from './components/Tooltip';
 
 export default function App() {
   const [activeCompanionId, setActiveCompanionId] = useState<CompanionId>('toni');
@@ -86,7 +68,6 @@ export default function App() {
     isSupported: isVoiceSupported,
     isListening: isVoiceListening,
     status: voiceStatus,
-    transcript: voiceTranscript,
     interimTranscript: voiceInterimTranscript,
     feedback: voiceFeedback,
     volumeLevel: voiceVolumeLevel,
@@ -489,7 +470,7 @@ export default function App() {
             <span>•</span>
             <span>Lavender Hill Studio</span>
             <span>•</span>
-            <span className="text-[#7B5C9E] font-mono font-semibold">AIEE Compliant (v4.2.0)</span>
+            <span className="text-[#7B5C9E] font-mono font-semibold">AIEE Compliant (v1.1.3)</span>
           </div>
 
           <div className="flex items-center gap-4 text-[11px] font-mono flex-wrap justify-center">

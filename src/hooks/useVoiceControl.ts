@@ -120,7 +120,6 @@ export function useVoiceControl({
   const [transcript, setTranscript] = useState<string>('');
   const [interimTranscript, setInterimTranscript] = useState<string>('');
   const [feedback, setFeedback] = useState<VoiceFeedback | null>(null);
-  const [isContinuous, setIsContinuous] = useState<boolean>(true);
   const [volumeLevel, setVolumeLevel] = useState<number>(0);
 
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);

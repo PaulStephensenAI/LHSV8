@@ -16,7 +16,6 @@ export const ConsultationModal: React.FC<ConsultationModalProps> = ({
 }) => {
   const [selectedPersona, setSelectedPersona] = useState<CompanionId>(activeCompanionId);
   const [deploymentPreference, setDeploymentPreference] = useState<'cloud' | 'offline-tablet' | 'hybrid'>('offline-tablet');
-  const [consultationTopic, setConsultationTopic] = useState<'neurodiversity' | 'privacy-audit' | 'spatial-setup' | 'ndis-autonomy'>('neurodiversity');
   const [notes, setNotes] = useState<string>('');
   const [isSubmitted, setIsSubmitted] = useState<boolean>(false);
 

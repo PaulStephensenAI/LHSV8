@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  ShieldCheck, 
   Database, 
   Sparkles, 
   BookOpen, 
@@ -59,7 +58,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   ecosystemTab = 'team',
   isOfflineMode,
   onToggleOfflineMode,
-  onOpenCharter,
+  onOpenCharter: _onOpenCharter,
   onOpenLedger,
   onOpenChat,
   onOpenTrainingFiles,
@@ -78,7 +77,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   onNavigateAbout,
   onNavigateContact,
   isVoiceListening = false,
-  isVoiceSupported = true,
+  isVoiceSupported: _isVoiceSupported = true,
   onToggleVoiceControl
 }) => {
   const [isExploreOpen, setIsExploreOpen] = useState(false);

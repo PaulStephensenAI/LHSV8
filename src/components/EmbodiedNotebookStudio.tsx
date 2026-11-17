@@ -8,25 +8,18 @@ import {
   CheckCircle2, 
   ArrowRight, 
   FileText, 
-  Layers, 
   Terminal, 
-  Search, 
-  ExternalLink,
   Calendar,
   Eye,
   Sliders,
   Check,
-  Share2,
-  RefreshCw,
-  Cpu,
   Brain,
   Quote
 } from 'lucide-react';
 import { CompanionId } from '../types';
 import { PERSONAS } from '../data/personasData';
-import { EMBODIED_NOTEBOOKS, EmbodiedNotebookItem } from '../data/embodiedNotebooksData';
+import { EMBODIED_NOTEBOOKS } from '../data/embodiedNotebooksData';
 import { CompanionAvatar } from './CompanionAvatar';
-import { Tooltip } from './Tooltip';
 
 interface EmbodiedNotebookStudioProps {
   onOpenConsultation: () => void;
@@ -43,19 +36,10 @@ export const EmbodiedNotebookStudio: React.FC<EmbodiedNotebookStudioProps> = ({
 }) => {
   const [selectedNotebookId, setSelectedNotebookId] = useState<string>(EMBODIED_NOTEBOOKS[0].id);
   const [activeTab, setActiveTab] = useState<'interactive-linker' | 'architecture' | 'how-it-works'>('interactive-linker');
-  const [customPrompt, setCustomPrompt] = useState<string>('');
-  const [isSimulatingQuery, setIsSimulatingQuery] = useState<boolean>(false);
   const [activeCitationModal, setActiveCitationModal] = useState<{ reference: string; excerpt: string } | null>(null);
 
   const activeNotebook = EMBODIED_NOTEBOOKS.find(nb => nb.id === selectedNotebookId) || EMBODIED_NOTEBOOKS[0];
   const linkedPersona = PERSONAS.find(p => p.id === activeNotebook.companionAffinity) || PERSONAS[0];
-
-  const handleSimulateCustom = () => {
-    setIsSimulatingQuery(true);
-    setTimeout(() => {
-      setIsSimulatingQuery(false);
-    }, 400);
-  };
 
   return (
     <section 
@@ -275,10 +259,7 @@ export const EmbodiedNotebookStudio: React.FC<EmbodiedNotebookStudioProps> = ({
                 <div className="flex items-center gap-3.5">
                   <div className="relative">
                     <CompanionAvatar
-                      avatarIcon={linkedPersona.avatarIcon}
-                      avatarImage={linkedPersona.avatarImage}
-                      name={linkedPersona.name}
-                      themeColor={linkedPersona.themeColor}
+                      persona={linkedPersona}
                       size="lg"
                     />
                     <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white" />

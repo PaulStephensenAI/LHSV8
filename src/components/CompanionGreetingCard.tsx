@@ -1,26 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Sparkles, 
-  Compass, 
-  ShieldCheck, 
-  LineChart, 
-  Layers, 
-  Activity, 
-  Stethoscope, 
+  Activity,
   MessageSquare,
   ChevronRight,
-  Sun,
-  Moon,
   Clock,
   HelpCircle,
   ChevronDown,
   ChevronUp,
-  Volume2,
-  RefreshCw,
-  Heart,
-  Copy,
   UserCheck,
-  CheckCircle2,
   X
 } from 'lucide-react';
 import { PersonaData, CompanionId } from '../types';
@@ -34,15 +22,6 @@ interface CompanionGreetingCardProps {
   onOpenChat: (personaId: CompanionId) => void;
   className?: string;
 }
-
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
-  Compass,
-  ShieldCheck,
-  LineChart,
-  Layers,
-  Activity,
-  Stethoscope
-};
 
 export const CompanionGreetingCard: React.FC<CompanionGreetingCardProps> = ({
   activePersona,
@@ -77,8 +56,6 @@ export const CompanionGreetingCard: React.FC<CompanionGreetingCardProps> = ({
     const interval = setInterval(updateTime, 60000);
     return () => clearInterval(interval);
   }, []);
-
-  const IconComp = ICON_MAP[activePersona.avatarIcon] || Sparkles;
 
   return (
     <div

@@ -8,18 +8,11 @@ import {
   X, 
   Maximize2, 
   Sparkles, 
-  Sliders, 
-  Grid, 
-  Scan, 
-  ShieldCheck, 
   CheckCircle2, 
   ChevronRight, 
   BookOpen, 
   Video, 
   Headphones, 
-  Radio, 
-  Layers, 
-  ExternalLink, 
   Copy, 
   Check, 
   Info,
@@ -27,7 +20,6 @@ import {
   Film
 } from 'lucide-react';
 import { CompanionId } from '../types';
-import { PERSONAS } from '../data/personasData';
 
 export type SimulationToolType = 'vocal-tones' | 'spatial-lab';
 
@@ -254,8 +246,6 @@ export const SimulationTutorialModal: React.FC<SimulationTutorialModalProps> = (
   const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
   const [isAudioNarratorActive, setIsAudioNarratorActive] = useState<boolean>(false);
   const [isCopiedPrompt, setIsCopiedPrompt] = useState<string | null>(null);
-  const [customVideoUrl, setCustomVideoUrl] = useState<string>('');
-  const [isUsingCustomVideo, setIsUsingCustomVideo] = useState<boolean>(false);
   
   const timerRef = useRef<number | null>(null);
 
@@ -754,7 +744,7 @@ export const SimulationTutorialModal: React.FC<SimulationTutorialModalProps> = (
               </div>
 
               <div className="space-y-3">
-                {toolConfig.steps.map((step, idx) => (
+                {toolConfig.steps.map((step) => (
                   <div
                     key={step.id}
                     className="p-4 rounded-2xl bg-[#171424] border border-[#2F2942] space-y-2.5"
