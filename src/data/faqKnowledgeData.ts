@@ -170,19 +170,20 @@ export const FAQ_KNOWLEDGE_BASE: FAQItem[] = [
     category: 'sovereign-apps',
     categoryLabel: 'Sovereign Apps',
     question: 'What are the 3 Sovereign Applications built by Lavender Hill Studio?',
-    shortAnswer: 'Gia (Family Memory Vault & Scrapbook), Angel.AI (Empathetic Care & Wellness Assistant), and FAB (Bespoke Sovereign Application Builder).',
+    shortAnswer: 'Gia • Ai (Multimedia Suite for Family Memories & Digital Storytelling), Angel.AI (Brain Injury & NDIS Care Application), and FAB • Build your own tools (Framework for Agentic Behavior of Bots).',
     detailedAnswer: `Lavender Hill Studio produces three flagship sovereign applications:
 
-1. **Gia (Family Memory Vault & Scrapbook)**:
-   • Private family digital gardening, audio vault recordings, and offline photo journaling.
-   • Operates 100% offline on local SSD / tablet storage for generational preservation.
+1. **Gia • Ai**:
+   • Multimedia suite that helps generate family memories for digital story telling.
+   • Private family digital storytelling, audio vault recordings, and generational preservation.
 
-2. **Angel.AI (Empathetic Care & Wellness Assistant)**:
-   • Non-clinical daily routine scaffolding, gentle care coordination, and calm structure.
-   • Deployed on Windows 11 & Samsung tablets or client-owned cloud instances.
+2. **Angel.AI**:
+   • An application that helps people with brain injury work with their NDIS supports and medical teams to reduce their cognitive load and produce calmer modes within the patient.
+   • Trauma-informed pacing and daily routine coordination with zero telemetry.
 
-3. **FAB (Bespoke Application Builder)**:
-   • Modular, schema-driven application generator enabling teams to build sovereign tools without code complexity.`,
+3. **FAB • Build your own tools**:
+   • Framework for Agentic Behavior of Bots is a framework to help everyday people transitioning from work to retirement due to brain injury coordinate their daily tasks such as project management, explainer videos.
+   • Includes a multi-agent chat room where multiple agents and personas can work on simultaneous research tasks to assist the user with research tasks.`,
     keywords: ['gia', 'angel.ai', 'fab', 'applications', 'family vault', 'care', 'wellness', 'app builder', 'sovereign apps'],
     groundedCitation: {
       fileId: '02',

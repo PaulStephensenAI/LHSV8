@@ -388,36 +388,94 @@ export const EditorialCalmHero: React.FC<EditorialCalmHeroProps> = ({
       {/* 5. INTEGRATED APPLICATIONS RIBBON & FORWARD FLOW BUTTON */}
       <div 
         id="your-applications-ribbon"
-        className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-[#ECE7DE]"
+        className="space-y-4 pt-5 border-t border-[#ECE7DE]"
       >
-        {/* Left Side: Your applications quiet summary */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs sm:text-sm">
-          <span className="font-serif font-bold text-[#181524]">
-            Specialist tools &amp; applications:
-          </span>
-          <span className="text-[#ECE7DE] hidden sm:inline">|</span>
-          <span className="text-[#5A5568]">
-            <strong className="text-[#181524] font-medium">Gia</strong> • Family memories
-          </span>
-          <span className="text-[#ECE7DE] hidden sm:inline">|</span>
-          <span className="text-[#5A5568]">
-            <strong className="text-[#181524] font-medium">Angel.AI</strong> • Everyday reflection
-          </span>
-          <span className="text-[#ECE7DE] hidden sm:inline">|</span>
-          <span className="text-[#5A5568]">
-            <strong className="text-[#181524] font-medium">FAB</strong> • Build your own tools
-          </span>
+        {/* Top Header & Navigation */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="font-serif font-bold text-sm sm:text-base text-[#181524]">
+              Specialist tools &amp; applications:
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => handleStageClick('meet-the-avatars')}
+            className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#7B5C9E] hover:bg-[#653E8A] text-white font-serif font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer group shrink-0"
+          >
+            <span>Next: Meet the avatars</span>
+            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+          </button>
         </div>
 
-        {/* Right Side: Next button */}
-        <button
-          type="button"
-          onClick={() => handleStageClick('meet-the-avatars')}
-          className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#7B5C9E] hover:bg-[#653E8A] text-white font-serif font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer group shrink-0"
-        >
-          <span>Next: Meet the avatars</span>
-          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-        </button>
+        {/* Detailed Application Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 text-xs sm:text-sm">
+          {/* 1. Gia • Ai */}
+          <div 
+            onClick={() => {
+              if (onSelectEcosystemTab) onSelectEcosystemTab('tools');
+              const el = document.getElementById('lavender-hill-ecosystem') || document.getElementById('panel-tools');
+              el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+            className="p-4 rounded-2xl bg-[#FAF8F5] border border-[#EBE5DA] hover:border-[#D4A373] transition-all cursor-pointer space-y-2 shadow-2xs group"
+          >
+            <div className="flex items-center justify-between gap-2 border-b border-[#EBE5DA] pb-2">
+              <span className="font-serif font-bold text-[#181524] text-sm group-hover:text-[#B45309] transition-colors">
+                Gia • Ai
+              </span>
+              <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-md bg-amber-100/70 text-[#92400E] font-semibold">
+                Memory Suite
+              </span>
+            </div>
+            <p className="text-[#5A5568] leading-relaxed">
+              Multimedia suite that helps generate family memories for digital story telling.
+            </p>
+          </div>
+
+          {/* 2. Angel.AI */}
+          <div 
+            onClick={() => {
+              if (onSelectEcosystemTab) onSelectEcosystemTab('tools');
+              const el = document.getElementById('lavender-hill-ecosystem') || document.getElementById('panel-tools');
+              el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+            className="p-4 rounded-2xl bg-[#F6FAF8] border border-[#DEEBE6] hover:border-[#234F56] transition-all cursor-pointer space-y-2 shadow-2xs group"
+          >
+            <div className="flex items-center justify-between gap-2 border-b border-[#DEEBE6] pb-2">
+              <span className="font-serif font-bold text-[#181524] text-sm group-hover:text-[#234F56] transition-colors">
+                Angel.AI
+              </span>
+              <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-md bg-teal-100/70 text-[#134E4A] font-semibold">
+                NDIS &amp; Care
+              </span>
+            </div>
+            <p className="text-[#5A5568] leading-relaxed">
+              An application that helps people with brain injury work with their NDIS supports and medical teams to reduce their cognitive load and produce calmer modes within the patient.
+            </p>
+          </div>
+
+          {/* 3. FAB • Build your own tools */}
+          <div 
+            onClick={() => {
+              if (onSelectEcosystemTab) onSelectEcosystemTab('tools');
+              const el = document.getElementById('lavender-hill-ecosystem') || document.getElementById('panel-tools');
+              el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+            className="p-4 rounded-2xl bg-[#FAF7FC] border border-[#ECE3F4] hover:border-[#7B5C9E] transition-all cursor-pointer space-y-2 shadow-2xs group md:col-span-1"
+          >
+            <div className="flex items-center justify-between gap-2 border-b border-[#ECE3F4] pb-2">
+              <span className="font-serif font-bold text-[#181524] text-sm group-hover:text-[#7B5C9E] transition-colors">
+                FAB • Build your own tools
+              </span>
+              <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded-md bg-purple-100/70 text-[#5A3882] font-semibold">
+                Framework
+              </span>
+            </div>
+            <p className="text-[#5A5568] leading-relaxed">
+              <strong className="text-[#181524] font-medium">Framework for Agentic Behavior of Bots</strong> is a framework to help everyday people transitioning from work to retirement due to brain injury coordinate their daily tasks such as project management, explainer videos. It includes a multi-agent chat room where multiple agents and personas can work on simultaneous research tasks to assist the user with research tasks.
+            </p>
+          </div>
+        </div>
       </div>
 
     </section>

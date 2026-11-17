@@ -108,17 +108,17 @@ Interactive Spatial & Daily Affirmation Modules
 
 The 3 Sovereign Applications
 
-1. Gia (Family Memory Vault & Scrapbook)
+1. Gia • Ai
 Type: Sovereign Digital Application
-Function: Private family digital memory gardening, voice vault recording, offline photo journal, and family legacy curation. Runs 100% offline on local storage.
+Function: Multimedia suite that helps generate family memories for digital story telling. Runs 100% offline on local storage.
 
-2. Angel.AI (Empathetic Wellness & Care Assistant)
+2. Angel.AI
 Type: Sovereign Digital Application
-Function: Gentle care coordination, personal wellness tracking, and calm daily routines. Available as a Local Sovereign desktop app on Windows 11 & Samsung tablets, or a one-time cloud deployment.
+Function: An application that helps people with brain injury work with their NDIS supports and medical teams to reduce their cognitive load and produce calmer modes within the patient.
 
-3. FAB (Bespoke Application Builder)
+3. FAB • Build your own tools
 Type: Sovereign Digital Application Framework
-Function: Modular, schema driven application generator allowing non-developers to build tailored tools on Windows 11 and Samsung tablets.
+Function: Framework for Agentic Behavior of Bots is a framework to help everyday people transitioning from work to retirement due to brain injury coordinate their daily tasks such as project management, explainer videos. It includes a multi-agent chat room where multiple agents and personas can work on simultaneous research tasks to assist the user with research tasks.
 
 Dual Path Deployment Options
 

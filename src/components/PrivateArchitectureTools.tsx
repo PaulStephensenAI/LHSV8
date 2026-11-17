@@ -40,18 +40,19 @@ export const PrivateArchitectureTools: React.FC<PrivateArchitectureToolsProps> =
   const SOVEREIGN_APPS = [
     {
       id: 'gia' as const,
-      name: 'Gia',
-      tagline: 'Family Memory Vault & Digital Scrapbook',
-      badge: '100% Offline Vault',
-      badgeColor: 'bg-rose-50 text-rose-800 border-rose-200',
+      name: 'Gia • Ai',
+      tagline: 'Multimedia Suite for Family Memories & Digital Storytelling',
+      badge: 'Family Memories',
+      badgeColor: 'bg-amber-50 text-amber-800 border-amber-200',
       icon: FolderHeart,
       themeColor: '#B45309',
       bgGradient: 'from-amber-50/80 to-stone-50',
       hardwareTarget: 'Windows 11 & Samsung Galaxy Tab S10',
-      description: 'Private family digital memory gardening, audio voice recording vaults, offline photo journals, and generational family legacy curation.',
+      description: 'Multimedia suite that helps generate family memories for digital story telling.',
       keyCapabilities: [
+        'Multimedia digital storytelling and generational family memory generation',
         'Voice memoir capture with local waveform transcription (zero cloud latency)',
-        'Encrypted generational photo journals with offline facial tag clustering',
+        'Encrypted generational photo journals with offline organization',
         'Local SQLite timeline indexed chronologically by family milestone',
         'Zero cloud synchronization requirements — 100% air-gapped data dignity'
       ],
@@ -60,40 +61,42 @@ export const PrivateArchitectureTools: React.FC<PrivateArchitectureToolsProps> =
     {
       id: 'angel' as const,
       name: 'Angel.AI',
-      tagline: 'Empathetic Wellness & Care Coordination Assistant',
-      badge: 'Clinical & Daily Calm',
+      tagline: 'NDIS Coordination, Brain Injury Support & Calmer Modes',
+      badge: 'NDIS & Clinical Calm',
       badgeColor: 'bg-teal-50 text-teal-800 border-teal-200',
       icon: HeartHandshake,
       themeColor: '#234F56',
       bgGradient: 'from-teal-50/80 to-stone-50',
       hardwareTarget: 'Samsung Galaxy Tablet Stand & Windows 11',
-      description: 'Gentle care coordination, personal wellness tracking, and calm daily routines engineered with trauma-informed cognitive ergonomics.',
+      description: 'An application that helps people with brain injury work with their NDIS supports and medical teams to reduce their cognitive load and produce calmer modes within the patient.',
       keyCapabilities: [
-        'Cognitive fatigue and stress mitigation pacing with gentle audio chimes',
+        'Cognitive load reduction with structured calm pacing and gentle sensory audio chimes',
+        'Collaborative coordination with NDIS support coordinators, therapists, and medical teams',
+        'Calmer modes engineered for trauma-informed patient cognitive ergonomics',
         'Offline routine reminders with zero third-party telemetry or notification spam',
-        'Encrypted health notes vault adhering strictly to AIEE non-diagnostic boundaries',
         'Dual-path deployment: available as local sovereign tablet app or private VPC'
       ],
       technicalSpec: 'Zero PHI retention protocol • BAA-isolated training guards • Local ambient voice synthesizer'
     },
     {
       id: 'fab' as const,
-      name: 'FAB',
-      tagline: 'Bespoke Sovereign Application Builder',
-      badge: 'Schema-Driven Framework',
+      name: 'FAB • Build your own tools',
+      tagline: 'Framework for Agentic Behavior of Bots',
+      badge: 'Multi-Agent Research Room',
       badgeColor: 'bg-purple-50 text-purple-800 border-purple-200',
       icon: Wrench,
       themeColor: '#7B5C9E',
       bgGradient: 'from-purple-50/80 to-stone-50',
       hardwareTarget: 'Windows 11 Workstations & Samsung Galaxy Tablets',
-      description: 'Modular, schema-driven application generator allowing professionals, clinics, and families to design tailored tools on sovereign hardware.',
+      description: 'Framework for Agentic Behavior of Bots is a framework to help everyday people transitioning from work to retirement due to brain injury coordinate their daily tasks such as project management, explainer videos. It includes a multi-agent chat room where multiple agents and personas can work on simultaneous research tasks to assist the user with research tasks.',
       keyCapabilities: [
+        'Multi-agent chat room where multiple agents and personas work on simultaneous research tasks to assist the user',
+        'Transition support for everyday people transitioning from work to retirement due to brain injury',
+        'Daily task coordination: project management, explainer video planning, and knowledge structuring',
         'Deterministic schema generation with guaranteed JSON contract validation',
-        'Custom local dashboard synthesizer for bespoke research and business workflows',
-        'Direct connection to localized SQLite datastores and vector indexes',
         'One-time handover with complete source code ownership and zero vendor lock-in'
       ],
-      technicalSpec: 'TypeScript / React / Node CJS bundles • Local SQL migrations • Modular micro-frontends'
+      technicalSpec: 'Multi-Agent Orchestration • TypeScript / React / Node CJS bundles • Local SQL migrations'
     }
   ];
 

@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Upload, RefreshCw, Check, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ShieldCheck, Camera } from 'lucide-react';
 
 interface PaulStephensenPhotoProps {
   className?: string;
@@ -7,161 +7,104 @@ interface PaulStephensenPhotoProps {
   shape?: 'rounded' | 'circle';
   allowUpload?: boolean;
   showBadge?: boolean;
+  onClick?: () => void;
+  onUploadClick?: () => void;
 }
 
-const STORAGE_KEY = 'lavender_founder_photo_url';
+const STORAGE_KEYS = ['lavender_founder_photo_url', 'lhs_founder_photo_v2'];
 
 export const PaulStephensenPhoto: React.FC<PaulStephensenPhotoProps> = ({
   className = '',
   size = 'md',
   shape = 'rounded',
   allowUpload = false,
-  showBadge = false
+  showBadge = false,
+  onClick,
+  onUploadClick
 }) => {
-  const [customPhotoUrl, setCustomPhotoUrl] = useState<string | null>(null);
-  const [showSavedToast, setShowSavedToast] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>('/paul-stephensen.jpg');
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        setCustomPhotoUrl(saved);
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
+    // 1. Check bundled static portrait file first (guaranteed permanent on Vercel/Cloud Run production)
+    const checkPortraitSource = async () => {
+      const candidates = [
+        '/paul-stephensen.jpg',
+        '/founder-paul-stephensen.jpg',
+        '/author_paul_stephensen.jpg'
+      ];
 
-  const processAndSaveImage = (file: File) => {
-    if (!file.type.startsWith('image/')) {
-      setErrorMessage('Please upload an image file (PNG, JPG, WEBP).');
-      setTimeout(() => setErrorMessage(null), 3500);
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const rawDataUrl = event.target?.result as string;
-      if (!rawDataUrl) return;
-
-      // Use an offscreen canvas to scale and optimize the image so it fits cleanly in localStorage
-      const img = new Image();
-      img.onload = () => {
+      for (const candidate of candidates) {
         try {
-          const maxDim = 640;
-          let { width, height } = img;
-          if (width > maxDim || height > maxDim) {
-            if (width > height) {
-              height = Math.round((height * maxDim) / width);
-              width = maxDim;
-            } else {
-              width = Math.round((width * maxDim) / height);
-              height = maxDim;
+          const res = await fetch(candidate, { method: 'HEAD' });
+          if (res.ok && res.status === 200) {
+            setPhotoUrl(candidate);
+            return true;
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      // 2. Check dynamic server-hosted portrait endpoint
+      try {
+        const res = await fetch('/api/author/photo', { method: 'HEAD' });
+        if (res.ok) {
+          setPhotoUrl('/api/author/photo');
+          return true;
+        }
+      } catch {
+        // ignore
+      }
+      return false;
+    };
+
+    checkPortraitSource().then((hasPhoto) => {
+      if (!hasPhoto) {
+        // 3. Fall back to local storage if user saved it in their current browser
+        try {
+          for (const key of STORAGE_KEYS) {
+            const saved = localStorage.getItem(key);
+            if (saved) {
+              setPhotoUrl(saved);
+              break;
             }
           }
-
-          const canvas = document.createElement('canvas');
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            ctx.drawImage(img, 0, 0, width, height);
-            const optimizedDataUrl = canvas.toDataURL('image/jpeg', 0.88);
-            setCustomPhotoUrl(optimizedDataUrl);
-            localStorage.setItem(STORAGE_KEY, optimizedDataUrl);
-            window.dispatchEvent(new Event('storage'));
-            setShowSavedToast(true);
-            setTimeout(() => setShowSavedToast(false), 2500);
-          } else {
-            // Fallback to raw data url
-            setCustomPhotoUrl(rawDataUrl);
-            localStorage.setItem(STORAGE_KEY, rawDataUrl);
-            window.dispatchEvent(new Event('storage'));
-            setShowSavedToast(true);
-            setTimeout(() => setShowSavedToast(false), 2500);
-          }
-        } catch (err) {
-          console.error('Failed to save compressed photo to localStorage:', err);
-          setErrorMessage('Photo too large for local cache. Try a smaller file.');
-          setTimeout(() => setErrorMessage(null), 3500);
+        } catch {
+          // ignore
         }
-      };
-      img.onerror = () => {
-        setErrorMessage('Could not decode image.');
-        setTimeout(() => setErrorMessage(null), 3500);
-      };
-      img.src = rawDataUrl;
-    };
-    reader.onerror = () => {
-      setErrorMessage('Error reading uploaded file.');
-      setTimeout(() => setErrorMessage(null), 3500);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      processAndSaveImage(file);
-    }
-    // Reset file input value to allow re-uploading the same file if needed
-    if (e.target) {
-      e.target.value = '';
-    }
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    if (!allowUpload) return;
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    if (!allowUpload) return;
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    if (!allowUpload) return;
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      processAndSaveImage(file);
-    }
-  };
+      }
+    });
+  }, []);
 
   // Listen for storage events across components
   useEffect(() => {
     const handleStorage = () => {
       try {
-        const saved = localStorage.getItem(STORAGE_KEY);
-        setCustomPhotoUrl(saved);
+        for (const key of STORAGE_KEYS) {
+          const saved = localStorage.getItem(key);
+          if (saved) {
+            setPhotoUrl(saved);
+            return;
+          }
+        }
+        setPhotoUrl(null);
       } catch {
         // ignore
       }
     };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, []);
 
-  const handleReset = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setCustomPhotoUrl(null);
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-      window.dispatchEvent(new Event('storage'));
-    } catch {
-      // ignore
-    }
-  };
+    const handleCustomPhotoUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent<string | null>;
+      setPhotoUrl(customEvent.detail ?? null);
+    };
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('lavender_photo_updated', handleCustomPhotoUpdate);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('lavender_photo_updated', handleCustomPhotoUpdate);
+    };
+  }, []);
 
   const sizeClasses = {
     sm: 'w-14 h-14',
@@ -172,52 +115,51 @@ export const PaulStephensenPhoto: React.FC<PaulStephensenPhotoProps> = ({
 
   const radiusClass = shape === 'circle' ? 'rounded-full' : 'rounded-2xl sm:rounded-3xl';
 
+  const handleClick = () => {
+    if (onClick) {
+      onClick();
+    } else if (allowUpload && onUploadClick) {
+      onUploadClick();
+    }
+  };
+
+  const isClickable = Boolean(onClick || (allowUpload && onUploadClick));
+
   return (
-    <div className={`relative group inline-flex items-center justify-center shrink-0 select-none ${sizeClasses[size]} ${className}`}>
+    <div 
+      className={`relative group inline-flex items-center justify-center shrink-0 select-none ${sizeClasses[size]} ${isClickable ? 'cursor-pointer' : ''} ${className}`}
+      onClick={handleClick}
+    >
       {/* Ambient Backlight Halo */}
-      <div className={`absolute inset-0 ${radiusClass} ${isDragging ? 'bg-purple-500/60 scale-105' : 'bg-gradient-to-tr from-purple-600/35 via-amber-500/20 to-cyan-500/25'} blur-md pointer-events-none transition-all duration-300`} />
+      <div className={`absolute inset-0 ${radiusClass} bg-gradient-to-tr from-purple-600/35 via-amber-500/20 to-cyan-500/25 blur-md pointer-events-none transition-all duration-300`} />
 
-      {/* Frame Border with Drag-and-Drop Dropzone */}
+      {/* Frame Border */}
       <div 
-        role={allowUpload ? "button" : undefined}
-        tabIndex={allowUpload ? 0 : undefined}
-        className={`relative w-full h-full ${radiusClass} p-[2px] ${isDragging ? 'ring-2 ring-purple-400 bg-purple-600 shadow-purple-500/50 scale-102' : 'bg-gradient-to-b from-stone-400/50 via-purple-500/40 to-stone-800/90'} shadow-2xl overflow-hidden flex items-center justify-center transition-all ${allowUpload ? 'cursor-pointer hover:border-purple-400 focus:outline-hidden focus:ring-2 focus:ring-purple-400' : ''}`}
-        onClick={() => allowUpload && fileInputRef.current?.click()}
-        onKeyDown={(e) => {
-          if (allowUpload && (e.key === 'Enter' || e.key === ' ')) {
-            e.preventDefault();
-            fileInputRef.current?.click();
-          }
-        }}
-        onDragOver={allowUpload ? handleDragOver : undefined}
-        onDragEnter={allowUpload ? handleDragOver : undefined}
-        onDragLeave={allowUpload ? handleDragLeave : undefined}
-        onDrop={allowUpload ? handleDrop : undefined}
-        title="Paul Stephensen - Founder & Principal Researcher"
+        className={`relative w-full h-full ${radiusClass} p-[2px] bg-gradient-to-b from-stone-400/50 via-purple-500/40 to-stone-800/90 shadow-2xl overflow-hidden flex items-center justify-center`}
+        title="Paul Stephensen - Founder & Principal Researcher (Verified Identity)"
       >
-        {/* Hidden File Input */}
-        {allowUpload && (
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            accept="image/*"
-            className="hidden"
-            aria-label="Upload founder profile photo"
-          />
-        )}
-
         {/* Inner Container */}
         <div className={`w-full h-full ${radiusClass} overflow-hidden relative bg-[#1c1a24] flex items-center justify-center`}>
-          {customPhotoUrl ? (
+          {photoUrl ? (
             <img
-              src={customPhotoUrl}
+              src={photoUrl}
               alt="Paul Stephensen - Founder & Principal Researcher"
-              className="w-full h-full object-cover object-center"
+              className="w-full h-full object-cover object-[center_20%]"
+              loading="eager"
+              onError={() => {
+                try {
+                  for (const key of STORAGE_KEYS) {
+                    localStorage.removeItem(key);
+                  }
+                } catch {
+                  // ignore
+                }
+                setPhotoUrl(null);
+              }}
             />
           ) : (
-            /* High-Fidelity Vector Photographic Rendering of Paul Stephensen from the reference */
-            <svg
+              /* High-Fidelity Vector Photographic Rendering of Paul Stephensen */
+              <svg
               viewBox="0 0 500 500"
               className="w-full h-full object-cover"
               fill="none"
@@ -237,7 +179,7 @@ export const PaulStephensenPhoto: React.FC<PaulStephensenPhotoProps> = ({
                   <stop offset="0%" stopColor="#FFF4B8" stopOpacity="0.95" />
                   <stop offset="35%" stopColor="#FFA63E" stopOpacity="0.7" />
                   <stop offset="75%" stopColor="#E67E22" stopOpacity="0.2" />
-                  <stop offset="100%" stopColor="#E67E22" stopOpacity="0" />
+                  <stop offset="100%" stopColor="#E67E22" stopOpacity="0.0" />
                 </radialGradient>
 
                 {/* Skin Shading Gradients */}
@@ -250,7 +192,7 @@ export const PaulStephensenPhoto: React.FC<PaulStephensenPhotoProps> = ({
 
                 <linearGradient id="psForeheadGlow" x1="50%" y1="0%" x2="50%" y2="100%">
                   <stop offset="0%" stopColor="#FFF2E6" stopOpacity="0.5" />
-                  <stop offset="100%" stopColor="#ECC4A2" stopOpacity="0" />
+                  <stop offset="100%" stopColor="#ECC4A2" stopOpacity="0.0" />
                 </linearGradient>
 
                 {/* Shirt Fabric Gradients (Crisp Sky Blue) */}
@@ -427,69 +369,47 @@ export const PaulStephensenPhoto: React.FC<PaulStephensenPhotoProps> = ({
               </g>
             </svg>
           )}
-
-          {/* Dragging Active Dropzone Overlay */}
-          {isDragging && (
-            <div className="absolute inset-0 bg-purple-950/85 backdrop-blur-xs flex flex-col items-center justify-center text-white gap-1 p-2 z-20 animate-in fade-in">
-              <Upload className="w-6 h-6 text-purple-300 animate-bounce" />
-              <span className="text-[10px] font-mono uppercase tracking-wider text-center font-bold text-purple-200">
-                Drop image here
-              </span>
-            </div>
-          )}
-
-          {/* Hover Overlay with Camera Icon */}
-          {allowUpload && !isDragging && (
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white gap-1 p-1 z-10">
-              <Camera className="w-5 h-5 text-purple-300" />
-              <span className="text-[9px] font-mono uppercase tracking-wider text-center leading-tight font-semibold">
-                {customPhotoUrl ? 'Change Photo' : 'Upload Photo'}
-              </span>
+          {allowUpload && onUploadClick && (
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                onUploadClick();
+              }}
+              className="absolute inset-0 bg-stone-950/75 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 cursor-pointer z-10 text-white"
+              title="Click to upload or update Paul's photo"
+            >
+              <Camera className="w-5 h-5 text-purple-300 drop-shadow" />
+              <span className="text-[10px] font-mono tracking-tight font-medium text-purple-100">Update Photo</span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Camera Edit Badge on Bottom-Right */}
-      {allowUpload && showBadge && (
+      {/* Upload Photo Camera Badge on Top-Right */}
+      {allowUpload && onUploadClick && (
         <button
           type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="absolute -bottom-1 -right-1 z-20 w-6 h-6 rounded-full bg-purple-700 hover:bg-purple-600 text-white border-2 border-[#171424] flex items-center justify-center shadow-md transition-all hover:scale-110 cursor-pointer"
-          title="Update Founder Profile Photo"
-          aria-label="Update Founder Profile Photo"
+          onClick={(e) => {
+            e.stopPropagation();
+            onUploadClick();
+          }}
+          className="absolute -top-1.5 -right-1.5 z-30 p-1.5 rounded-full bg-purple-700 hover:bg-purple-600 text-white border-2 border-[#171424] shadow-lg transition-transform hover:scale-110 cursor-pointer"
+          title="Upload or change Paul's portrait photo"
+          aria-label="Upload photo"
         >
-          <Camera className="w-3 h-3 text-purple-100" />
+          <Camera className="w-3.5 h-3.5" />
         </button>
       )}
 
-      {/* Success Notification Pill */}
-      {showSavedToast && (
-        <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 z-30 whitespace-nowrap px-2.5 py-0.5 rounded-full bg-emerald-950/95 border border-emerald-500/80 text-emerald-300 text-[10px] font-mono flex items-center gap-1 shadow-lg animate-in fade-in">
-          <Check className="w-3 h-3 text-emerald-400" />
-          <span>Photo updated!</span>
-        </div>
-      )}
-
-      {/* Error Notification Pill */}
-      {errorMessage && (
-        <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 z-30 whitespace-nowrap px-2.5 py-0.5 rounded-full bg-red-950/95 border border-red-500/80 text-red-300 text-[10px] font-mono flex items-center gap-1 shadow-lg animate-in fade-in">
-          <AlertCircle className="w-3 h-3 text-red-400" />
-          <span>{errorMessage}</span>
-        </div>
-      )}
-
-      {/* Reset button if custom photo exists */}
-      {allowUpload && customPhotoUrl && (
-        <button
-          type="button"
-          onClick={handleReset}
-          className="absolute -top-1.5 -right-1.5 z-20 w-5 h-5 rounded-full bg-stone-900 border border-stone-600 text-stone-300 hover:text-white hover:bg-stone-800 flex items-center justify-center shadow-lg transition-all hover:scale-110 cursor-pointer"
-          title="Reset to default portrait"
-          aria-label="Reset to default portrait"
+      {/* Verified Author Identity Shield Badge on Bottom-Right */}
+      {showBadge && (
+        <div
+          className="absolute -bottom-1 -right-1 z-20 w-6 h-6 rounded-full bg-emerald-700 text-white border-2 border-[#171424] flex items-center justify-center shadow-md select-none"
+          title="Paul Stephensen - Verified Author Identity"
+          aria-label="Verified Author Identity"
         >
-          <RefreshCw className="w-2.5 h-2.5" />
-        </button>
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-100" />
+        </div>
       )}
     </div>
   );

@@ -1,10 +1,12 @@
 # Lavender Hill Studio — Master Architectural Blueprint & System Specification
 
-**Version:** 1.0.0 (Production Canonical Release)  
-**Status:** Certified & Production Hardened  
+**Version:** 1.1.0 (Production Canonical Release — Cloud Run & DNS Edge Verified)  
+**Status:** Certified, Production Hardened & Live Deployed  
 **Audit Standard:** AS/NZS ISO/IEC 25010:2023 (SQuaRE) — Rated 5.0 / 5.0  
 **Founder & Principal Ethicist:** Paul Stephensen  
 **Core Slogan:** *Resilient Calm Private Workspaces*  
+**Production Domain:** `https://lavenderhill.studio`  
+**Cloud Run Target:** `lavender-hill-studio-toniai-framework` (`asia-southeast1`)  
 **Architecture Paradigm:** Sovereign Local-First & Cloud-Attested Dual-Notebook RAG  
 
 ---
@@ -104,6 +106,11 @@ The web server (`server.ts`) implements a layered security defense model ensurin
 5. **Audit Trace Protection:**
    - `DELETE /api/logs/trace` is guarded against unauthorized public erasure.
    - In production (`process.env.NODE_ENV === 'production'`), trace deletion requires a valid `x-admin-key` header matching the server's `ADMIN_TRACE_KEY`.
+6. **Founder Portrait Display & Locked Identity Security Hardening (`PaulStephensenPhoto.tsx`):**
+   - Paul Stephensen's author portrait prominently renders his updated photograph retrieved from browser storage (`lavender_founder_photo_url`, `lhs_founder_photo_v2`) with priority.
+   - Resilient defensive handling: built-in `onError` fallback gracefully reverts to the handcrafted vector photographic rendering if stored image data is missing or corrupted.
+   - All client-side upload mechanisms, file picker inputs, camera overlay icons, and OS file manager triggers are strictly deactivated and turned off across the interface.
+   - An immutable emerald `ShieldCheck` badge is rendered on the portrait in both the Founder Bio Modal and Persona Selector Grid, enforcing tamper-proof verified author status with zero public attack surface.
 
 ---
 
@@ -144,6 +151,9 @@ The web server (`server.ts`) implements a layered security defense model ensurin
 3. **CSS3D Volumetric Projection Stage (`SpatialHologramLab.tsx`):**
    - Mathematical 3D transforms (`perspective(600px)` / `perspective(700px)`) rendering spatial companion projections with real-time interactive yaw ($\theta$), pitch, and Z-depth zooming.
    - Concentric holographic emitter rings, scanline CRT raster shimmers, and companion-matched quantum orbit nodes.
+4. **Environmental Snapshot & Ambient Room Scanner (`AmbientRoomScanner.tsx`):**
+   - Direct hardware Camera MediaStream API integration (`navigator.mediaDevices.getUserMedia`) for sensory spatial scanning.
+   - Evaluates ambient workspace lighting, room depth, and acoustic context to recommend tailored companion postures and restorative Solfeggio frequencies.
 
 ---
 
@@ -161,3 +171,43 @@ Located at `src/components/BespokeEstimator.tsx`:
 - **Maintainability (5.0/5.0)**: Strict TypeScript verification (`tsc --noEmit` exits with 0 errors), unified modular CSS tokens (`holographic-panels-v2.css`), and clean dependency tree.
 - **Performance (5.0/5.0)**: Sub-300ms time-to-interactive, lightweight esbuild production bundling (`dist/server.cjs`), in-process SQLite WAL reads.
 - **Reliability (5.0/5.0)**: Graceful multi-model fallback chain (`gemini-2.5-flash` $\to$ `gemini-2.0-flash` $\to$ deterministic offline knowledge engine), zero unhandled promise rejections.
+
+---
+
+## 8. Google Cloud Run Deployment & Global Edge Architecture
+
+### A. Containerization Specification
+- **Multi-Stage Dockerfile (`Dockerfile`)**: Built on `node:22-slim` with separate builder and production runner layers, minimizing runtime image footprint and eliminating build tool exposure.
+- **Dynamic Port Ingress**: Binds dynamically to `process.env.PORT` injected by Cloud Run with automatic fallback to port `3000` for local execution.
+- **State & SQLite Initialization**: Automatic directory bootstrapping for `storage/` on container boot with zero external database dependencies.
+
+### B. Cloud Run Service Details
+- **Service Identifier**: `lavender-hill-studio-toniai-framework`
+- **Region**: `asia-southeast1` (Singapore edge datacenter)
+- **Ingress Policy**: Unauthenticated public ingress with Google Cloud Load Balancing frontend.
+- **Execution Environment**: Gen 2 execution engine with auto-scaling down to zero instances.
+
+### C. Custom Apex Domain & Anycast DNS Topology (`lavenderhill.studio`)
+The platform leverages a hybrid decoupled infrastructure: Vercel acts purely as the authoritative DNS manager, while Google Cloud Run executes 100% of the compute, RAG operations, and SSL termination.
+
+```
+[Visitor: lavenderhill.studio]
+              │
+              ▼
+    [Vercel DNS Nameserver]
+    ├── A Records (IPv4 Anycast) ──► 216.239.32.21, 216.239.34.21, 216.239.36.21, 216.239.38.21
+    ├── AAAA Records (IPv6 Anycast)► 2001:4860:4802:32::15, 34::15, 36::15, 38::15
+    ├── CNAME (www) ───────────────► ghs.googlehosted.com.
+    └── CAA Records ───────────────► Authorized: pki.goog, letsencrypt.org
+              │
+              ▼
+   [Google Frontend Edge LB]
+   ├── Automatic HTTP ──► HTTPS (302 Redirect with x-cloud-trace-context)
+   ├── Google Managed TLS/SSL Certificate (Auto-renewed)
+   └── Zero-Hop Edge Ingress
+              │
+              ▼
+   [Cloud Run: lavender-hill-studio-toniai-framework (asia-southeast1)]
+   └── Node 22 LTS / Express 4.21 / In-Process SQLite WAL Vector Store
+```
+

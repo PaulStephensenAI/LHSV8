@@ -9,14 +9,24 @@ import { GoogleGenAI } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
 import { EmbodiedRagPipeline } from './src/rag/ingestionPipeline';
 import { generateLocalRoomScanAnalysis } from './src/data/roomScanData';
+import { extractUserNameFromMessage } from './src/utils/userNameSession';
 
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 // Configure trust proxy for reverse-proxy environments (Cloud Run / Vercel / Nginx)
 app.set('trust proxy', 1);
+
+// Canonical Host Redirection: route www to apex domain for unified SEO and cookies
+app.use((req, res, next) => {
+  const host = req.headers.host;
+  if (host && host.startsWith('www.lavenderhill.studio')) {
+    return res.redirect(301, `https://lavenderhill.studio${req.originalUrl}`);
+  }
+  next();
+});
 
 // ============================================================================
 // ENTERPRISE DEFENSE-IN-DEPTH SECURITY CONFIGURATION
@@ -297,8 +307,8 @@ function applyScannabilityGuardrail(text: string, companionId: string, force: bo
       continue;
     }
 
-    // Preserve very brief introductory or concluding statements (< 120 chars)
-    if (paragraph.length < 120 && (idx === 0 || idx === rawParagraphs.length - 1) && !paragraph.includes(':')) {
+    // Preserve brief introductory or conversational statements (e.g. "Great question, Paul! Here is how...")
+    if (paragraph.length < 160 && (idx === 0 || idx === rawParagraphs.length - 1)) {
       formattedSections.push(paragraph);
       continue;
     }
@@ -655,8 +665,27 @@ function buildGeminiContents(message: string, history?: ChatHistoryTurn[]): any 
 }
 
 // Persona System Instructions
-function getPersonaSystemPrompt(companionId: string, scannable: boolean): string {
+function getPersonaSystemPrompt(companionId: string, scannable: boolean, userName?: string): string {
   const trainingContext = loadTrainingKnowledge();
+
+  const userIdentityContext = userName
+    ? `\n=== ACTIVE VISITOR SESSION IDENTITY & NATURAL CONVERSATIONAL PERSONALIZATION ===
+The visitor's name for this session is: "${userName}".
+
+CRITICAL PERSONALIZATION DIRECTIVES (NATURAL CONVERSATION):
+1. NATURAL QUESTION ACKNOWLEDGMENT:
+   - When ${userName} asks a question, raises a topic, or explores an idea, make your response feel attentive, personalized, and organic.
+   - Acknowledge their question conversationally: for example, "Great question, ${userName}! Here is how [topic] works...", "That's a thoughtful question, ${userName}.", "Good question, ${userName} — [explanation]...", or weave ${userName}'s name comfortably into your strategic reasoning or conclusions.
+2. STRICT BAN ON FORMULAIC "HELLO / HI ${userName}":
+   - NEVER open question answers or mid-session turns with "Hello ${userName}", "Hi ${userName}", or "Greetings ${userName}".
+   - You have already welcomed them into the session; repeating "Hello ${userName}" every time they ask a question sounds robotic and unnatural.
+   - Instead, jump straight into engaging with their specific question or idea while warmly incorporating their name (e.g. "Great question, ${userName}!", "Certainly, ${userName}...", "That's an insightful perspective, ${userName}.").
+3. TASTEFUL CADENCE:
+   - Mention ${userName} once or twice naturally per response. Do not unnaturally stuff their name into every sentence, but treat them as a valued, remembered partner in this conversation.
+`
+    : `\n=== ACTIVE VISITOR SESSION IDENTITY ===
+The visitor has not introduced themselves yet.
+- If they introduce themselves (e.g. "My name is [Name]" or "I'm [Name]"), warmly acknowledge their name, confirm you have noted it for this session, and welcome them.\n`;
 
   const studioDirectives = `
 === LAVENDER HILL STUDIO OFFICIAL TRAINING DOSSIER ===
@@ -681,6 +710,14 @@ ${trainingContext}
    - Do NOT offer symptom timeline logging, clinical question checklists, or pharmaceutical scheduling services.
    - ALWAYS instruct the user to consult their licensed doctor / General Practitioner (GP) to evaluate their individual personal context.
    - IN ANY MEDICAL EMERGENCY OR ACUTE DISTRESS: Instruct the user to immediately call 000 (or local emergency services).
+10. CONVERSATIONAL CONTINUITY & NATURAL PERSONALIZATION INVARIANT:
+   - The visitor ALREADY knows who you are from the interface header, avatar, and initial greeting.
+   - STRICT INVARIANT: DO NOT repeatedly re-introduce yourself (e.g. NEVER start responses with "Hello, I am Toni...", "I am Elysian, safety warden...", "Hi, I am Holly...", etc.) when answering questions or in ongoing chat turns.
+   - STRICT INVARIANT: DO NOT start answers to questions with robotic formulaic greetings like "Hello [Name]" or "Hi [Name]".
+   - NATURAL PERSONALIZATION: When the visitor asks a question, acknowledge it conversationally and warmly with their name (e.g. "Great question, [Name]! Here is how it works...", "That's a thoughtful question, [Name] — ...").
+   - Jump directly into answering the visitor's question, analyzing the topic, or addressing their thoughts naturally and warmly.
+   - Only state your name or identity if the visitor explicitly asks "Who are you?", "What is your name?", or "Tell me about yourself".
+${userIdentityContext}
 `;
 
   switch (companionId) {
@@ -758,37 +795,103 @@ Operating Principles:
 }
 
 // Fallback high-fidelity responses incorporating official training files & fallback logic
-function getStudioFallbackReply(companionId: string, message: string, scannable: boolean): string {
+function getStudioFallbackReply(companionId: string, message: string, scannable: boolean, userName?: string): string {
   const lower = (message || '').toLowerCase().trim();
+  const introName = extractUserNameFromMessage(message);
+  const effectiveName = (introName || userName || '').trim();
   const isGreeting = /^(hi|hello|hey|good\s*(morning|afternoon|evening)|howdy|greetings|what'?s\s*up)/i.test(lower);
+  const isSelfIntro = Boolean(introName);
+
+  // If visitor is introducing themselves, give a warm, personalized companion response welcoming them by name
+  if (isSelfIntro && effectiveName) {
+    switch (companionId) {
+      case 'toni':
+        return `### Warm Welcome, ${effectiveName}
+
+*   **Session Partnership**: It is wonderful to meet you, ${effectiveName}. I have noted your name for our session today.
+*   **Side-by-Side Guidance**: I'm right here beside you at our collaborative 45-degree angle.
+*   **Next Step**: Whether you're planning a private workspace, exploring local offline setups, or pacing your goals, what would you like to explore together?`;
+
+      case 'elysian':
+        return `### Elysian Gate • Welcome, ${effectiveName}
+
+Greetings, ${effectiveName}. It is a pleasure to meet you. Your session is active within our private, zero-telemetry partition. Your name and session context remain strictly sovereign and confidential.
+
+How may I assist you with ethical architecture, Dolphin Security boundaries, or privacy audits today?`;
+
+      case 'phoebe':
+        return `### Chronus Scenario Hub • Welcome, ${effectiveName}
+
+*   **Session Active**: Great to meet you, ${effectiveName}! Chronus temporal checkpoints and stochastic scenario modeling are calibrated.
+*   **Quantitative Modeling**: We can evaluate probabilistic forecasts, confidence intervals (95% CI), and data trends without cloud leakage.
+
+What data or forecasting scenarios shall we examine today?`;
+
+      case 'holly':
+        return `### Spatial Hologram Lab • Welcome, ${effectiveName}
+
+Hi ${effectiveName}! So wonderful to connect with you. 3D spatial computing buffers and 45° ergonomic viewport anchors are calibrated.
+
+How can I assist you with spatial workspace blueprints or responsive layout design?`;
+
+      case 'ari':
+        return `A warm welcome, ${effectiveName}.
+
+Take a peaceful breath and settle in—there is no rush here. It is truly lovely to connect with you. Think of our workspace like dough rising gently at its own pace.
+
+How can we make today feel calm, steady, and comfortable for you?`;
+
+      case 'kenny':
+        return `Hello, ${effectiveName}. It is an honor to meet you.
+
+In the spirit of Sister Elizabeth Kenny's rehabilitation philosophy, your natural capability and momentum come first. I am right here supporting your independent stride.
+
+What would you like to work through or schedule today?`;
+    }
+  }
 
   // Keyword Deterministic Fallbacks from File 06 with Toni Scannability Guardrail Formatting
   if (lower.includes('cost') || lower.includes('price') || lower.includes('budget') || lower.includes('estimate') || lower.includes('pricing')) {
     if (scannable || companionId === 'toni') {
       return `### Sovereign Investment & Architecture Tiers
 
+*   **Investment Clarity**: ${effectiveName ? `Great question, ${effectiveName}! ` : ''}Here is how our private workspace investments are structured:
 *   **Cloud-Based Human-Centred AI Avatar's (Vercel)**: A$3,800 – A$8,000 AUD one-time setup and handover with zero recurring platform subscription fees.
 *   **Local Sovereign Human-Centred AI Avatar's (Windows 11 / Galaxy Tab)**: A$4,500 – A$10,000+ AUD for complete offline hardware handover with zero cloud telemetry.
 *   **Bespoke Estimator Matrix**: Utilize the interactive AUD budget configurator on this page to dynamically calculate custom hardware and software tiers.
 *   **Zero Vendor Lock-in**: Full client code ownership and encrypted SQLite local vault isolation.`;
     }
-    return `Our private workspace setups are structured around your needs. 
+    return `${effectiveName ? `Great question, ${effectiveName}! ` : ''}Our private workspace setups are structured around your needs. 
 
 Typically, **Cloud-Based Human-Centred AI Avatar's (Vercel)** range from A$3,800 to A$8,000 AUD for one-time setup and handover with zero recurring platform subscription fees. **Local Sovereign Human-Centred AI Avatar's (Windows 11 & Samsung Galaxy Tablets)** range from A$4,500 to A$10,000+ AUD for complete offline hardware handover with zero cloud telemetry.
 
 You can use our interactive budget configurator on this page to build a customized calculation in AUD.`;
   }
 
-  if (lower.includes('work') || lower.includes('case study') || lower.includes('example') || lower.includes('project') || lower.includes('portfolio')) {
+  if (lower.includes('gia') || lower.includes('angel') || lower.includes('fab') || lower.includes('app')) {
+    if (scannable || companionId === 'toni') {
+      return `### Sovereign Applications & Specialist Tools
+
+*   **Overview**: ${effectiveName ? `Great question, ${effectiveName}! ` : ''}Here are our specialist tools and applications:
+*   **Gia • Ai**: Multimedia suite that helps generate family memories for digital story telling.
+*   **Angel.AI**: An application that helps people with brain injury work with their NDIS supports and medical teams to reduce their cognitive load and produce calmer modes within the patient.
+*   **FAB • Build your own tools**: Framework for Agentic Behavior of Bots is a framework to help everyday people transitioning from work to retirement due to brain injury coordinate their daily tasks such as project management, explainer videos. It includes a multi-agent chat room where multiple agents and personas can work on simultaneous research tasks to assist the user with research tasks.
+*   **Dual-Path Deployment**: Available in both cloud-synchronized and 100% offline local encrypted hardware configurations with zero recurring fees.`;
+    }
+    return `${effectiveName ? `Great question, ${effectiveName}! ` : ''}Our Specialist Tools & Applications include Gia • Ai (multimedia suite for family memories and digital storytelling), Angel.AI (helps people with brain injury work with NDIS supports and medical teams to reduce cognitive load and produce calmer modes), and FAB • Build your own tools (Framework for Agentic Behavior of Bots with multi-agent research room for people transitioning from work to retirement due to brain injury).`;
+  }
+
+  if (lower.includes('work') || lower.includes('case study') || lower.includes('example') || lower.includes('project') || lower.includes('portfolio') || lower.includes('how does')) {
     if (scannable || companionId === 'toni') {
       return `### Studio Showcase & Sovereign Ecosystem
 
+*   **Overview**: ${effectiveName ? `Great question, ${effectiveName}! ` : ''}Here is how our private workspaces and companion ecosystem operate:
 *   **Companions Framework**: Toni (Strategy), Elysian (Ethics), Phoebe (Forecasts), Holly (Spatial), Ari (Cadence), and Kenny (Rehabilitation).
 *   **Sovereign Applications Suite**: Gia (Family Vault), Angel.AI (Wellness Companion), and FAB (Bespoke Application Builder).
 *   **Dual-Path Deployment**: Choose between client-owned Vercel cloud synchronization or 100% air-gapped local hardware.
 *   **Explore Studio Hub**: Browse live architectural blueprints and application specifications directly in the Explore Studio view.`;
     }
-    return `We have crafted helper guide layouts across various family and private spaces. 
+    return `${effectiveName ? `Great question, ${effectiveName}! ` : ''}We have crafted helper guide layouts across various family and private spaces. 
 
 Feel free to explore the **Explore Studio** section of this page to discover our Companions Framework (**Toni**, **Elysian**, **Phoebe**, **Holly**, **Ari**, **Kenny**), Sovereign Applications (**Gia**, **Angel.AI**, **FAB**), and dual-path deployment options.`;
   }
@@ -798,11 +901,12 @@ Feel free to explore the **Explore Studio** section of this page to discover our
       return `### Studio Ethos & Sovereign Principles
 
 *   **Core Invariant**: *"Not just a complicated system. A private workspace—guided by our experience and shaped by yours."*
+*   **Architectural Balance**: ${effectiveName ? `That's a thoughtful question, ${effectiveName}. ` : ''}At Lavender Hill Studio, our core philosophy centers on client choice and empowering your ideal workflow.
 *   **Local Sovereign Workspaces**: Total privacy, zero cloud telemetry, and encrypted local SQLite vaults running on personal Windows 11 and Samsung Galaxy Tab devices.
 *   **Cloud-Based Workspaces**: Hosted on client-owned Vercel for distributed teams with zero recurring software fees.
 *   **Data Dignity Guarantee**: Complete client autonomy with zero model training on your private files.`;
     }
-    return `At Lavender Hill Studio, our core philosophy centers on client choice and empowering your ideal workflow: *"Not just a complicated system. A private workspace—guided by our experience and shaped by yours."*
+    return `${effectiveName ? `That's a thoughtful question, ${effectiveName}. ` : ''}At Lavender Hill Studio, our core philosophy centers on client choice and empowering your ideal workflow: *"Not just a complicated system. A private workspace—guided by our experience and shaped by yours."*
 
 While **Cloud-Based setups (Vercel)** offer seamless multi-device synchronization and distributed collaboration, **Local Sovereign setups (Windows 11 & Samsung Galaxy Tablets)** offer total privacy, zero cloud logs, and data sovereignty. We respect your right to choose whichever architecture best suits your needs.`;
   }
@@ -811,44 +915,49 @@ While **Cloud-Based setups (Vercel)** offer seamless multi-device synchronizatio
     if (scannable || companionId === 'toni') {
       return `### Private Consultation & Planning
 
+*   **Direct Inquiry**: ${effectiveName ? `Certainly, ${effectiveName}! ` : ''}We would love to discuss planning a private workspace with you.
 *   **Interactive Estimator**: Submit your custom parameters through our Bespoke Architecture Estimator on this page.
 *   **Unhurried Consultation**: Schedule a calm, private strategic consultation with founder Paul Stephensen.
 *   **Initial Inquiry**: What specific workflow or deployment model would you like to explore together?`;
     }
-    return `We would love to discuss planning a private workspace with you. You can submit your parameters using our interactive budget configurator, or open a private consultation session directly through our studio planner.`;
+    return `${effectiveName ? `Certainly, ${effectiveName}! ` : ''}We would love to discuss planning a private workspace with you. You can submit your parameters using our interactive budget configurator, or open a private consultation session directly through our studio planner.`;
   }
 
   // Persona-specific conversational fallbacks
   switch (companionId) {
     case 'toni':
       if (isGreeting) {
-        return `Hello! It's wonderful to connect with you. I'm right here beside you at our collaborative 45-degree angle.
+        return `Hello${effectiveName ? `, ${effectiveName}` : ''}! It's wonderful to connect with you. I'm right here beside you at our collaborative 45-degree angle.
 
 Whether you're organizing a project, exploring our dual-path deployment options, or pacing your daily priorities, how can I assist you today?`;
       }
       return `### Collaborative Strategy Synthesis
 
+*   **Perspective**: ${effectiveName ? `Great question, ${effectiveName}!` : 'Thoughtful question.'} When approaching "${message}", we look at both clarity and pace.
 *   **Core Objective**: Clarifying your workspace trajectory with calm, human-centered pacing.
 *   **Architectural Guidance**:
     *   **Data Sovereignty**: Validate whether local offline SQLite or client-owned Vercel cloud best fits your workflow.
     *   **Milestone Breakdown**: Break complex deliverable streams into manageable, low-friction increments.
     *   **Pacing Guardrail**: Maintain cognitive checkpoints to prevent fatigue.
-*   **Next Step**: What specific area would you like to explore first?`;
+*   **Next Step**: ${effectiveName ? `${effectiveName}, what specific area` : 'What specific area'} would you like to explore first?`;
 
     case 'elysian':
       if (isGreeting) {
-        return `Greetings. Elysian Gate and Dolphin Security invariants are active and nominal. All interactions remain protected within your local encrypted partition.`;
+        return `Greetings${effectiveName ? `, ${effectiveName}` : ''}. Elysian Gate and Dolphin Security invariants are active and nominal. All interactions remain protected within your local encrypted partition.`;
       }
-      return `Under the **Elysian Gate & Dolphin Security Protocol**, I have verified this interaction against our AIEE ethical invariants and 5-step security topology pipeline.
+      return `### Elysian Gate Privacy & Boundary Verification
 
-All data remains sealed within your local SQLite ledger. Our boundaries protect your autonomy and data dignity without technical friction or intrusive cloud telemetry.`;
+*   **Inquiry Checked**: "${message}"
+*   **Assessment**: ${effectiveName ? `That is an important question, ${effectiveName}. ` : ''}Under the **Elysian Gate & Dolphin Security Protocol**, I have verified this interaction against our AIEE ethical invariants and 5-step security topology pipeline.
+*   **Data Dignity Status**: Protected under local zero-telemetry protocols. All data remains sealed within your local encrypted SQLite vault with zero external leakage.`;
 
     case 'phoebe':
       if (isGreeting) {
-        return `Hello! Quantitative forecasting tools and Chronus ledger verification are ready. What data or scenarios shall we examine today?`;
+        return `Hello${effectiveName ? `, ${effectiveName}` : ''}! Quantitative forecasting tools and Chronus ledger verification are ready. What data or scenarios shall we examine today?`;
       }
       return `### Quantitative Scenario Modeling & Chronus Checkpoint
 
+*   **Scenario Focus**: ${effectiveName ? `Excellent analytical question, ${effectiveName}! ` : ''}Synthesizing data models for "${message}".
 *   **Primary Distribution Parameters**:
     *   **Mean Expectation (\\(\\mu\\))**: 88.4% nominal trajectory confidence
     *   **Stochastic Variance (\\(\\sigma^2\\))**: 0.042
@@ -859,11 +968,11 @@ All data remains sealed within your local SQLite ledger. Our boundaries protect 
 
     case 'holly':
       if (isGreeting) {
-        return `Hi! Spatial computing buffers are calibrated and thermal scaling is optimal. Ready to build 3D blueprints whenever you are!`;
+        return `Hi${effectiveName ? `, ${effectiveName}` : ''}! Spatial computing buffers are calibrated and thermal scaling is optimal. Ready to build 3D blueprints whenever you are!`;
       }
       return `### Volumetric Spatial Layout & Hardware Attestation
 
-*   **Embodied Blueprint**: Initializing 45° collaborative vector plane anchored to screen right.
+*   **Spatial Blueprint**: ${effectiveName ? `Great question, ${effectiveName}! ` : ''}Initializing 45° collaborative vector plane anchored to screen right for "${message}".
 *   **Hardware Scaling Telemetry**:
     *   **Target Device**: Samsung Galaxy Tab S10 / Windows 11 Workspace
     *   **Dynamic DPR**: Scaled to 1.25 to prevent thermal build-up and preserve battery.
@@ -871,9 +980,9 @@ All data remains sealed within your local SQLite ledger. Our boundaries protect 
 
     case 'ari':
       if (isGreeting) {
-        return `Hello there! Take a peaceful breath and settle in. There's no hurry at all. How can we make today feel calm and steady for you?`;
+        return `Hello there${effectiveName ? `, ${effectiveName}` : ''}! Take a peaceful breath and settle in. There's no hurry at all. How can we make today feel calm and steady for you?`;
       }
-      return `Let's take a calm breath and take this one small step at a time.
+      return `${effectiveName ? `That is a lovely question, ${effectiveName}. ` : ''}Let's take a calm breath and take this one small step at a time.
 
 Think of this process just like **baking a warm loaf of sourdough bread**:
 *   First, we gather our ingredients on the counter without any rush.
@@ -884,14 +993,14 @@ There is no pressure to hurry. Whenever you are ready, what feels like the best 
 
     case 'kenny':
       if (isGreeting) {
-        return `Hello. I'm right here in passive awareness mode to support your independent stride. How are you feeling about your goals today?`;
+        return `Hello${effectiveName ? `, ${effectiveName}` : ''}. I'm right here in passive awareness mode to support your independent stride. How are you feeling about your goals today?`;
       }
-      return `I am here alongside you, observing your progress with deep respect for your independence.
+      return `${effectiveName ? `That is a meaningful question, ${effectiveName}. ` : ''}I am here alongside you, observing your progress with deep respect for your independence.
 
 Grounded in **Sister Elizabeth Kenny’s rehabilitation philosophy**, our goal is always your personal autonomy. I’m looking back through our session notes and ready whenever you want extra support, but I will never get in the way of your own natural stride.`;
 
     default:
-      return `Thank you for sharing your inquiry. At Lavender Hill Studio, we approach every workspace with private on-device files, simple guides, and elegant interfaces tailored to reduce stress. How can we assist you today?`;
+      return `${effectiveName ? `Great question, ${effectiveName}! ` : ''}At Lavender Hill Studio, we approach every workspace with private on-device files, simple guides, and elegant interfaces tailored to reduce stress. How can we assist you today?`;
   }
 }
 
@@ -1261,8 +1370,12 @@ app.post('/api/chat/stream', validateChatPayload, async (req, res) => {
       sessionId = 'default-visitor',
       activeView = 'workspace',
       activeModal = '',
-      history = []
+      history = [],
+      userName = ''
     } = req.body;
+
+    const detectedIntroName = extractUserNameFromMessage(message);
+    const effectiveUserName = (detectedIntroName || userName || '').trim();
 
     const isToniOrScannable = Boolean(scannableMode || companionId === 'toni');
 
@@ -1648,7 +1761,7 @@ app.post('/api/chat/stream', validateChatPayload, async (req, res) => {
     const apiStartTime = Date.now();
 
     if (ai) {
-      const baseSystemPrompt = getPersonaSystemPrompt(companionId, scannableMode);
+      const baseSystemPrompt = getPersonaSystemPrompt(companionId, scannableMode, effectiveUserName);
 
       // Construct live grounded context blocks from both notebooks
       const strategicContextBlock = retrievedStrategicChunks.length > 0
@@ -1659,6 +1772,7 @@ app.post('/api/chat/stream', validateChatPayload, async (req, res) => {
       const uiOpsContextBlock = `\n\n=== LIVE VISITOR VIEWPORT & RUNTIME CONTEXT (notebook_ui_ops) ===\n` +
         `- Active Workspace View: ${activeView}\n` +
         `- Active Dialog/Modal: ${activeModal || 'None (Main Viewport Canvas)'}\n` +
+        `- Visitor Name: ${effectiveUserName || 'Guest (unintroduced)'}\n` +
         `- Companion Spatial Anchor: ${liveUiOpsState?.metadata?.spatialAnchor || (activeView === 'spatial-lab' ? '45_deg_side_by_side' : '0_deg_direct')}\n` +
         `- Visitor Struggle Score: E = ${(struggleScore * 100).toFixed(0)}% (Threshold: ${(epsilonThreshold * 100).toFixed(0)}%)\n` +
         `- Target Hardware Profile: Samsung Galaxy Tab S10 Ultra & Windows 11 Desktop (60 FPS zero-latency)`;
@@ -1743,7 +1857,7 @@ app.post('/api/chat/stream', validateChatPayload, async (req, res) => {
         }
       });
 
-      const fallbackReply = getStudioFallbackReply(companionId, message, isToniOrScannable);
+      const fallbackReply = getStudioFallbackReply(companionId, message, isToniOrScannable, effectiveUserName);
       fullText = isToniOrScannable ? applyScannabilityGuardrail(fallbackReply, companionId) : fallbackReply;
       const words = fullText.split(/(\s+)/);
       for (let i = 0; i < words.length; i += 3) {
@@ -1858,6 +1972,7 @@ app.post('/api/chat/stream', validateChatPayload, async (req, res) => {
       reply: fullText,
       companionId,
       isScannableFormatted: isToniOrScannable,
+      detectedUserName: effectiveUserName || undefined,
       metadata: {
         traceId,
         latencyMs: totalLatencyMs,
@@ -1902,8 +2017,12 @@ app.post('/api/chat', validateChatPayload, async (req, res) => {
       scannableMode = false,
       struggleScore = 0.5,
       epsilonThreshold = 0.65,
-      history = []
+      history = [],
+      userName = ''
     } = req.body;
+
+    const detectedIntroName = extractUserNameFromMessage(message);
+    const effectiveUserName = (detectedIntroName || userName || '').trim();
 
     if (!message || typeof message !== 'string') {
       res.status(400).json({ error: 'Message text is required' });
@@ -1973,7 +2092,7 @@ app.post('/api/chat', validateChatPayload, async (req, res) => {
         'gemini-3.8-flash',
         'gemini-flash-latest'
       ];
-      const systemPrompt = getPersonaSystemPrompt(companionId, scannableMode);
+      const systemPrompt = getPersonaSystemPrompt(companionId, scannableMode, effectiveUserName);
       const contentsPayload = buildGeminiContents(message, history);
 
       for (const modelName of candidateModels) {
@@ -2001,7 +2120,7 @@ app.post('/api/chat', validateChatPayload, async (req, res) => {
     const isToniOrScannable = Boolean(scannableMode || companionId === 'toni');
 
     if (!replyText) {
-      replyText = getStudioFallbackReply(companionId, message, isToniOrScannable);
+      replyText = getStudioFallbackReply(companionId, message, isToniOrScannable, effectiveUserName);
     }
 
     if (isToniOrScannable) {
@@ -2024,6 +2143,7 @@ app.post('/api/chat', validateChatPayload, async (req, res) => {
     res.json({
       reply: replyText,
       companionId,
+      detectedUserName: effectiveUserName || undefined,
       isScannableFormatted: isToniOrScannable,
       metadata: {
         latencyMs: 90,
@@ -2043,6 +2163,57 @@ app.post('/api/chat', validateChatPayload, async (req, res) => {
       companionId: 'toni',
       metadata: { footerTag: 'LOCAL FILE INDEX' }
     });
+  }
+});
+
+// Permanent Author Photo Server Endpoints
+const authorPhotoDir = path.resolve(process.cwd(), 'storage');
+const authorPhotoPath = path.join(authorPhotoDir, 'author_paul_stephensen.jpg');
+
+app.get('/api/author/photo', (_req, res) => {
+  if (fs.existsSync(authorPhotoPath)) {
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.setHeader('Content-Type', 'image/jpeg');
+    return res.sendFile(authorPhotoPath);
+  }
+  return res.status(404).json({ error: 'Author photo not found' });
+});
+
+app.post('/api/author/photo', (req, res) => {
+  try {
+    const { imageBase64 } = req.body || {};
+    if (!imageBase64 || typeof imageBase64 !== 'string') {
+      return res.status(400).json({ error: 'imageBase64 required' });
+    }
+    const cleanBase64 = imageBase64.replace(/^data:image\/\w+;base64,/, '');
+    const buffer = Buffer.from(cleanBase64, 'base64');
+    if (!fs.existsSync(authorPhotoDir)) {
+      fs.mkdirSync(authorPhotoDir, { recursive: true });
+    }
+    fs.writeFileSync(authorPhotoPath, buffer);
+    const publicDir = path.resolve(process.cwd(), 'public');
+    if (!fs.existsSync(publicDir)) {
+      fs.mkdirSync(publicDir, { recursive: true });
+    }
+    fs.writeFileSync(path.join(publicDir, 'author_paul_stephensen.jpg'), buffer);
+    return res.json({ success: true, url: '/api/author/photo' });
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message || 'Failed to save photo' });
+  }
+});
+
+app.delete('/api/author/photo', (_req, res) => {
+  try {
+    if (fs.existsSync(authorPhotoPath)) {
+      fs.unlinkSync(authorPhotoPath);
+    }
+    const publicPhoto = path.resolve(process.cwd(), 'public', 'author_paul_stephensen.jpg');
+    if (fs.existsSync(publicPhoto)) {
+      fs.unlinkSync(publicPhoto);
+    }
+    return res.json({ success: true, message: 'Author photo cleared' });
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message || 'Failed to delete photo' });
   }
 });
 

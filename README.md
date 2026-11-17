@@ -1,11 +1,12 @@
 # Lavender Hill Studio — ToniAI™ Framework
 
-[![Version](https://img.shields.io/badge/version-1.0.0--canonical-purple.svg)](./CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.1.0--canonical-purple.svg)](./CHANGELOG.md)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.2-yellow.svg)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38bdf8.svg)](https://tailwindcss.com/)
 [![Node.js](https://img.shields.io/badge/Node.js-22%20LTS-green.svg)](https://nodejs.org/)
 [![Security](https://img.shields.io/badge/Dolphin%20Security-Certified%205.0-emerald.svg)](./ARCHITECTURAL_BLUEPRINT.md)
+[![Domain](https://img.shields.io/badge/domain-lavenderhill.studio-9333ea.svg)](https://lavenderhill.studio)
 [![License](https://img.shields.io/badge/License-Proprietary-gray.svg)](#)
 
 > **"Resilient Calm Private Workspaces"**  
@@ -18,7 +19,7 @@
 Lavender Hill Studio represents an intentional departure from hyperactive, extractive AI software. Founded on the principles of the **Australian Institute of Ecological Ethics (AIEE)** Charter, the studio provides calm, private, and mathematically grounded cognitive environments. 
 
 The architecture supports a dual-path deployment model:
-1. **Cloud-Attested Assistants (Google Cloud Run / Edge)**: Secure, single-tenant web environments with strict zero-model-training data isolation and enterprise defense-in-depth headers.
+1. **Cloud-Attested Assistants (Google Cloud Run / Edge)**: Secure, single-tenant web environments on `lavenderhill.studio` with strict zero-model-training data isolation and enterprise defense-in-depth headers.
 2. **Local Sovereign Assistants (Windows 11 & Samsung Galaxy Tablets)**: Air-gapped, offline-first execution backed by local encrypted SQLite vaults and zero outbound telemetry.
 
 ---
@@ -27,10 +28,11 @@ The architecture supports a dual-path deployment model:
 
 | Feature | Description | Technology Stack |
 | :--- | :--- | :--- |
-| **6 Gentle Companions** | Toni (Strategy), Elysian (Ethics), Phoebe (Forecasts), Holly (Spatial), Ari (Cadence), Kenny (Rehabilitation). | React 19, Lucide Icons, Unsplash Curated High-Res Avatars |
+| **6 Gentle Companions** | Toni (Strategy), Elysian (Ethics), Phoebe (Forecasts), Holly (Spatial), Ari (Cadence), Kenny (Rehabilitation). | React 19, Lucide Icons, Curated Avatars |
 | **Dual-Notebook RAG** | In-process vector retrieval combining live UI/spatial telemetry (`notebook_ui_ops`) with 7 training dossiers (`notebook_strategic`). | Node 22 `node:sqlite` (WAL mode), IEEE-754 binary BLOBs, Cosine Similarity |
 | **3D Spatial Hologram Lab** | Volumetric isometric projection stage featuring real-time $\theta$ yaw, pitch, Z-depth scaling, laser emitter rings, and CRT raster shaders. | CSS3D Transforms, WebGL Shaders, Reactive Sliders |
 | **Solfeggio Tone Synthesizer** | Auditory calming and neurorehabilitation tone generator tuned to restorative frequencies ($432\text{ Hz}$, $528\text{ Hz}$, $639\text{ Hz}$, $741\text{ Hz}$). | Web Audio API (`AudioContext`, Sine Oscillator, ADSR Envelope) |
+| **Ambient Room Scanner** | Hardware Camera snapshot of physical working environments to recommend tailored companion postures and Solfeggio tones. | Web MediaStream Camera API, HTML5 Canvas |
 | **Voice Control Engine** | Hands-free, low-latency vocal command recognition and calm synthesized speech playback. | Web Speech API (`SpeechRecognition`, `speechSynthesis`) |
 | **Bespoke Pricing Estimator** | Commercial 981-line configuration matrix calculating real-time Australian Dollar (AUD) software and hardware deployment tiers. | React State Engine, Australian Hardware Spec Matrices |
 | **Enterprise Defense Stack** | HTTP defense headers, IP rate limiting, 4,000-character payload ceilings, and reverse-proxy client IP resolution. | Helmet 8.3, `express-rate-limit` 8.7, Express 4.21 |
@@ -98,13 +100,15 @@ npm start
 
 ```
 .
+├── .dockerignore                 # Production Docker build exclusions
+├── Dockerfile                    # Multi-stage Node 22 slim container for Google Cloud Run
 ├── ARCHITECTURAL_BLUEPRINT.md    # Definitive technical system specification
 ├── CHANGELOG.md                  # Semantic version history and release logs
 ├── README.md                     # Project documentation and developer quickstart
 ├── SYSTEMS_ARCHITECTURE_ANALYSIS.md # Deep-dive structural and algorithmic audit
 ├── .env.example                  # Environment variable reference
 ├── package.json                  # Canonical dependencies and build scripts
-├── server.ts                     # Production Express backend and API proxy
+├── server.ts                     # Production Express backend and API proxy (dynamic PORT)
 ├── vite.config.ts                # Vite 6 + Tailwind v4 compilation pipeline
 │
 ├── ai_training_context/          # 7 Official Authoritative Training Dossiers
@@ -127,12 +131,14 @@ npm start
 │   ├── types.ts                  # Shared TypeScript interfaces & persona models
 │   │
 │   ├── components/               # Modular UI Components
+│   │   ├── AmbientRoomScanner.tsx     # Hardware Camera API environmental sensor
 │   │   ├── BespokeEstimator.tsx       # 981-line AUD investment calculator
 │   │   ├── CompanionAvatar.tsx        # Responsive avatar & visual status rings
 │   │   ├── CompanionGreetingCard.tsx  # Hero card with persona greeting
 │   │   ├── ExploreStudio.tsx          # Tabbed navigation center
 │   │   ├── MasterHeroCard.tsx         # Studio identity & spatial quick-actions
 │   │   ├── Navbar.tsx                 # Header navigation & companion switcher
+│   │   ├── PaulStephensenPhoto.tsx    # Founder portrait (locked in public builds)
 │   │   ├── PersonaChatModal.tsx       # Streaming SSE companion dialog
 │   │   ├── PersonaSelectorGrid.tsx    # 6-companion selection matrix
 │   │   ├── PrivateArchitectureTools.tsx # Sovereign applications suite
@@ -178,14 +184,49 @@ All endpoints are hosted on port `3000` (or `PORT` environment variable) and pro
 
 ---
 
-## 🚢 Deployment & Reverse-Proxy Notes
+## 🚢 Deployment & Production Operations
 
-### Google Cloud Run / Container Platforms
-The application is preconfigured for container ingress on port `3000`:
-- **Trust Proxy**: Configured via `app.set('trust proxy', 1);` in `server.ts` to inspect incoming `X-Forwarded-For` headers from Google Cloud Load Balancers and Nginx reverse proxies.
-- **Port Binding**: Binds strictly to `0.0.0.0:3000`.
-- **Zero Cold-Start Lag**: Embedded `node:sqlite` runs locally inside the container filesystem, requiring zero external database connections or network handshakes to answer queries.
-- **Health Checks**: Point container readiness and liveness probes to `GET /api/health`.
+### Google Cloud Run Container Architecture
+The platform is fully containerized using a multi-stage production Dockerfile (`Dockerfile`) based on `node:22-slim`:
+- **Dynamic Port Ingress**: `server.ts` binds dynamically to `process.env.PORT` injected by Cloud Run (with fallback to port `3000` for local execution).
+- **Trust Proxy**: Configured via `app.set('trust proxy', 1);` in `server.ts` to inspect incoming `X-Forwarded-For` headers from Google Cloud Load Balancers and edge proxies.
+- **Self-Healing Vector Storage**: In-process SQLite database (`storage/lavenderhill_rag.db`) boots in WAL mode with automatic cold-start schema and dossier validation. Zero external database networking latency.
+- **Health Probes**: Liveness and readiness probes bind to `GET /api/health`.
+
+### Production Deployment Commands
+```bash
+# Build production container image
+docker build -t lavender-hill-studio .
+
+# Deploy to Google Cloud Run (asia-southeast1)
+gcloud run deploy lavender-hill-studio-toniai-framework \
+  --source . \
+  --region asia-southeast1 \
+  --allow-unauthenticated \
+  --set-env-vars "NODE_ENV=production,APP_URL=https://lavenderhill.studio"
+```
+
+### Custom Domain & DNS Mapping (`lavenderhill.studio`)
+The production domain `https://lavenderhill.studio` is mapped directly to the Cloud Run service in `asia-southeast1` using Vercel as the authoritative DNS manager:
+
+| Type | Name / Host | Target Value | TTL | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| **A** | `@` (apex) | `216.239.32.21` | 60s | Google Anycast IPv4 #1 |
+| **A** | `@` (apex) | `216.239.34.21` | 60s | Google Anycast IPv4 #2 |
+| **A** | `@` (apex) | `216.239.36.21` | 60s | Google Anycast IPv4 #3 |
+| **A** | `@` (apex) | `216.239.38.21` | 60s | Google Anycast IPv4 #4 |
+| **AAAA** | `@` (apex) | `2001:4860:4802:32::15` | 60s | Google Anycast IPv6 #1 |
+| **AAAA** | `@` (apex) | `2001:4860:4802:34::15` | 60s | Google Anycast IPv6 #2 |
+| **AAAA** | `@` (apex) | `2001:4860:4802:36::15` | 60s | Google Anycast IPv6 #3 |
+| **AAAA** | `@` (apex) | `2001:4860:4802:38::15` | 60s | Google Anycast IPv6 #4 |
+| **CNAME** | `www` | `ghs.googlehosted.com.` | 60s | Canonical www alias |
+| **CAA** | `@` | `0 issue "pki.goog"` | 60s | Google Trust Services SSL |
+| **CAA** | `@` | `0 issue "letsencrypt.org"` | 60s | Let's Encrypt SSL |
+
+*Edge verification: Google Frontend edge servers automatically handle HTTP-to-HTTPS 302 redirects and issue managed SSL/TLS certificates.*
+
+### Founder Profile Photo Display & Locked Identity Policy
+Paul Stephensen's author portrait displays his updated photograph directly with persistent local-storage integration and automatic fallback recovery. To ensure airtight security and eliminate any client-side attack surface, all photo update features, camera buttons, file pickers, and OS file manager triggers have been turned off and deactivated. The author portrait is locked with an immutable emerald `ShieldCheck` badge certifying Paul Stephensen's verified identity across the platform.
 
 ---
 

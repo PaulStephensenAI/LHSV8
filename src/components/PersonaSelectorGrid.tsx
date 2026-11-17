@@ -233,7 +233,12 @@ export const PersonaSelectorGrid: React.FC<PersonaSelectorGridProps> = ({
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
               {/* Official Locked Founder Portrait */}
               <div className="flex flex-col items-center gap-2 shrink-0">
-                <PaulStephensenPhoto size="lg" shape="rounded" allowUpload={false} showBadge={false} />
+                <PaulStephensenPhoto 
+                  size="lg" 
+                  shape="rounded" 
+                  showBadge={true} 
+                  allowUpload={false}
+                />
               </div>
 
               <div className="space-y-1.5">

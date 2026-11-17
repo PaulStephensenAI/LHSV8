@@ -302,7 +302,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                         <Boxes className="w-4 h-4 text-[#234F56] shrink-0" />
                         <div className="min-w-0">
                           <div className="font-semibold text-xs">Standalone Sovereign Apps</div>
-                          <div className="text-[10px] text-[#5A5568] truncate">Gia (family), Angel.AI (health), FAB (tools)</div>
+                          <div className="text-[10px] text-[#5A5568] truncate">Gia • Ai, Angel.AI (NDIS/care), FAB (agentic tools)</div>
                         </div>
                       </button>
 

@@ -12,9 +12,7 @@ import {
   Cpu,
   Lock,
   Boxes,
-  Database,
-  Camera,
-  Upload
+  Database
 } from 'lucide-react';
 import { PaulStephensenPhoto } from './PaulStephensenPhoto';
 
@@ -43,7 +41,10 @@ export const FounderBioModal: React.FC<FounderBioModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/75 backdrop-blur-md animate-in fade-in duration-200"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Founder Bio and Academic Portfolio"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-md animate-in fade-in duration-200"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -72,9 +73,10 @@ export const FounderBioModal: React.FC<FounderBioModalProps> = ({
           </div>
           <button
             id="close-founder-bio-btn"
+            type="button"
             onClick={onClose}
             aria-label="Close founder bio card"
-            className="px-3 py-1.5 rounded-xl bg-stone-900/80 hover:bg-stone-800 border border-stone-800 text-stone-300 hover:text-white transition-all flex items-center gap-1.5 text-xs font-semibold cursor-pointer group"
+            className="px-3 py-1.5 rounded-xl bg-stone-900/90 hover:bg-stone-800 border border-stone-700 hover:border-stone-500 text-stone-300 hover:text-white transition-all flex items-center gap-1.5 text-xs font-semibold cursor-pointer group shadow-sm active:scale-95"
             title="Close card & return to Home Workspace (Esc)"
           >
             <X className="w-4 h-4 group-hover:rotate-90 transition-transform duration-200" />
@@ -90,15 +92,26 @@ export const FounderBioModal: React.FC<FounderBioModalProps> = ({
           {/* Founder Identity Card */}
           <div className="p-4 sm:p-5 rounded-2xl bg-[#171424] border border-purple-800/40 relative overflow-hidden">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              {/* Founder Portrait Photo (Locked) */}
+              {/* Founder Portrait Photo (Verified Official Identity) */}
               <div className="flex flex-col items-center gap-1.5 shrink-0">
-                <PaulStephensenPhoto size="md" shape="rounded" allowUpload={false} showBadge={false} />
+                <PaulStephensenPhoto 
+                  size="md" 
+                  shape="rounded" 
+                  showBadge={true} 
+                  allowUpload={false}
+                />
               </div>
               
               <div className="space-y-1">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-950/80 border border-purple-700/50 text-purple-300 text-[10px] font-mono uppercase tracking-wider font-semibold">
-                  <Sparkles className="w-3 h-3 text-purple-400" />
-                  <span>Founder & Principal Researcher</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-purple-950/80 border border-purple-700/50 text-purple-300 text-[10px] font-mono uppercase tracking-wider font-semibold">
+                    <Sparkles className="w-3 h-3 text-purple-400" />
+                    <span>Founder & Principal Researcher</span>
+                  </div>
+                  <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-600/50 text-emerald-300 text-[10px] font-mono">
+                    <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                    <span>Author Profile Verified</span>
+                  </div>
                 </div>
                 <h4 className="text-xl sm:text-2xl font-serif font-bold text-white tracking-tight">
                   Paul Stephensen
@@ -201,10 +214,12 @@ export const FounderBioModal: React.FC<FounderBioModalProps> = ({
           </span>
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
+              id="founder-bio-footer-close-btn"
+              type="button"
               onClick={onClose}
-              className="flex-1 sm:flex-initial px-4 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-stone-300 hover:text-white text-xs font-semibold transition-all border border-stone-800 flex items-center justify-center gap-1.5"
+              className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-stone-900/90 hover:bg-stone-800 text-stone-200 hover:text-white text-xs font-semibold transition-all border border-stone-700 hover:border-stone-500 flex items-center justify-center gap-2 cursor-pointer shadow-sm active:scale-95"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-4 h-4 text-stone-400" />
               <span>Close & Return to Home</span>
             </button>
             <button

@@ -30,12 +30,15 @@ import {
   ChevronUp,
   Tag,
   CornerDownLeft,
-  Eye
+  Eye,
+  User,
+  Edit3
 } from 'lucide-react';
 import { CompanionId, ChatMessage, PersonaData, FAQCategory, FAQItem, FAQSearchResult } from '../types';
 import { PERSONAS } from '../data/personasData';
 import { FAQ_CATEGORIES, FAQ_KNOWLEDGE_BASE } from '../data/faqKnowledgeData';
 import { searchFAQIndex, getProactiveFAQSuggestion, formatFAQAsChatMessage } from '../utils/faqSearchIndex';
+import { getStoredSessionUserName, saveStoredSessionUserName, extractUserNameFromMessage } from '../utils/userNameSession';
 import { CompanionAvatar } from './CompanionAvatar';
 import { ScannableCompanionText } from './ScannableCompanionText';
 
@@ -268,6 +271,11 @@ export const PersonaChatModal: React.FC<PersonaChatModalProps> = ({
   const [isMinimized, setIsMinimized] = useState<boolean>(false);
   const [isScannableMode, setIsScannableMode] = useState<boolean>(true);
 
+  // Session User Identity State (Remembered for the visitor's session across all 6 companions)
+  const [sessionUserName, setSessionUserName] = useState<string>(() => getStoredSessionUserName());
+  const [isIntroDrawerOpen, setIsIntroDrawerOpen] = useState<boolean>(false);
+  const [nameInputDraft, setNameInputDraft] = useState<string>('');
+
   // FAQ Search Index State
   const [isFAQSearchOpen, setIsFAQSearchOpen] = useState<boolean>(false);
   const [faqSearchQuery, setFaqSearchQuery] = useState<string>('');
@@ -319,7 +327,7 @@ export const PersonaChatModal: React.FC<PersonaChatModalProps> = ({
             id: `init-${activeCompanionId}`,
             companionId: activeCompanionId,
             sender: 'companion',
-            text: getInitialGreeting(activeCompanionId),
+            text: getInitialGreeting(activeCompanionId, sessionUserName),
             timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             isScannableFormatted: true,
             metadata: {
@@ -329,7 +337,7 @@ export const PersonaChatModal: React.FC<PersonaChatModalProps> = ({
         ]
       };
     });
-  }, [activeCompanionId]);
+  }, [activeCompanionId, sessionUserName]);
 
   const handleCloseModal = useCallback(() => {
     if ('speechSynthesis' in window) {
@@ -382,6 +390,15 @@ export const PersonaChatModal: React.FC<PersonaChatModalProps> = ({
   const handleSendMessage = async (textToSend?: string) => {
     const text = textToSend || inputText;
     if (!text.trim() || isLoading) return;
+
+    // Detect if the user introduces themselves in this message
+    const detectedIntroName = extractUserNameFromMessage(text);
+    let currentUserName = sessionUserName;
+    if (detectedIntroName && detectedIntroName !== sessionUserName) {
+      currentUserName = detectedIntroName;
+      setSessionUserName(detectedIntroName);
+      saveStoredSessionUserName(detectedIntroName);
+    }
 
     const userMessageId = `user-${Date.now()}`;
     const userMessage: ChatMessage = {
@@ -441,6 +458,7 @@ export const PersonaChatModal: React.FC<PersonaChatModalProps> = ({
           sessionId,
           activeView: activeViewSection,
           activeModal: activeModal || '',
+          userName: currentUserName || undefined,
           context: `Live visitor session in Lavender Hill Studio with active view ${activeViewSection}.`
         })
       });
@@ -485,6 +503,10 @@ export const PersonaChatModal: React.FC<PersonaChatModalProps> = ({
                 if (data.reply) {
                   accumulatedText = data.reply;
                 }
+                if (data.detectedUserName) {
+                  setSessionUserName(data.detectedUserName);
+                  saveStoredSessionUserName(data.detectedUserName);
+                }
                 if (data.metadata?.interceptTriggered) {
                   isGuardrail = true;
                 }
@@ -528,7 +550,7 @@ export const PersonaChatModal: React.FC<PersonaChatModalProps> = ({
       }
     } catch (err) {
       console.warn('Utilizing refined fallback response:', err);
-      const fallbackReply = generateLocalFallback(activeCompanionId, text.trim());
+      const fallbackReply = generateLocalFallback(activeCompanionId, text.trim(), currentUserName);
       accumulatedText = fallbackReply;
 
       setMessagesByPersona(prev => {
@@ -620,7 +642,7 @@ export const PersonaChatModal: React.FC<PersonaChatModalProps> = ({
           id: `init-${activeCompanionId}-${Date.now()}`,
           companionId: activeCompanionId,
           sender: 'companion',
-          text: getInitialGreeting(activeCompanionId),
+          text: getInitialGreeting(activeCompanionId, sessionUserName),
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           isScannableFormatted: true,
           metadata: {
@@ -955,6 +977,101 @@ export const PersonaChatModal: React.FC<PersonaChatModalProps> = ({
               <span>{isFAQSearchOpen ? 'View Chat' : 'Search FAQ'}</span>
             </button>
           </div>
+        </div>
+
+        {/* Session User Identity Bar: Shows remembered session name or allows introducing themselves */}
+        <div className="bg-[#FAF9FC] border-b border-stone-200 px-5 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-mono uppercase tracking-wider text-stone-500 font-semibold flex items-center gap-1.5">
+              <User className="w-3.5 h-3.5 text-purple-700" />
+              Session Visitor:
+            </span>
+            {sessionUserName ? (
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-900 border border-purple-200 font-semibold text-xs flex items-center gap-1.5 shadow-2xs">
+                  <span>👋 {sessionUserName}</span>
+                  <span className="text-[10px] font-normal text-purple-700/80">(Remembered for session)</span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNameInputDraft(sessionUserName);
+                    setIsIntroDrawerOpen(true);
+                  }}
+                  className="text-stone-500 hover:text-purple-700 text-[11px] underline underline-offset-2 transition-colors cursor-pointer"
+                  title="Change your session name"
+                >
+                  Change
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="text-stone-600 text-xs italic">
+                  Guest (unintroduced)
+                </span>
+                {!isIntroDrawerOpen && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNameInputDraft('');
+                      setIsIntroDrawerOpen(true);
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 font-medium text-xs transition-colors flex items-center gap-1 cursor-pointer shadow-2xs"
+                    title="Introduce yourself so the companions address you by name"
+                  >
+                    <span>👋 Introduce Yourself</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Inline Name Introduction Form */}
+          {isIntroDrawerOpen ? (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const trimmed = nameInputDraft.trim();
+                if (trimmed) {
+                  setSessionUserName(trimmed);
+                  saveStoredSessionUserName(trimmed);
+                  setIsIntroDrawerOpen(false);
+                  handleSendMessage(`Hi, my name is ${trimmed}`);
+                } else {
+                  setIsIntroDrawerOpen(false);
+                }
+              }}
+              className="flex items-center gap-1.5 animate-in fade-in duration-150"
+            >
+              <input
+                type="text"
+                value={nameInputDraft}
+                onChange={(e) => setNameInputDraft(e.target.value)}
+                placeholder="Enter your name..."
+                autoFocus
+                maxLength={35}
+                className="px-2.5 py-1 bg-white border border-purple-300 rounded-lg text-xs text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-1 focus:ring-purple-600 shadow-2xs"
+              />
+              <button
+                type="submit"
+                disabled={!nameInputDraft.trim()}
+                className="px-2.5 py-1 bg-purple-900 hover:bg-purple-800 disabled:opacity-50 text-white rounded-lg text-xs font-semibold shadow-2xs cursor-pointer"
+              >
+                Save &amp; Introduce
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsIntroDrawerOpen(false)}
+                className="px-2 py-1 text-stone-500 hover:text-stone-800 text-xs cursor-pointer"
+              >
+                Cancel
+              </button>
+            </form>
+          ) : (
+            <span className="text-[11px] text-stone-400 font-sans hidden sm:inline">
+              {sessionUserName ? `All 6 companions will remember you as ${sessionUserName}` : 'Introduce yourself so companions address you by name'}
+            </span>
+          )}
         </div>
 
         {/* Main Central Area: Either FAQ Search Index OR Chat Messages */}
@@ -1520,6 +1637,35 @@ export const PersonaChatModal: React.FC<PersonaChatModalProps> = ({
                 <span>Browse FAQ Index ({FAQ_KNOWLEDGE_BASE.length})</span>
               </button>
 
+              {/* Proactive session introduction chip */}
+              {!sessionUserName ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInputText("Hi, my name is ");
+                    inputRef.current?.focus();
+                  }}
+                  className="px-3.5 py-2 rounded-full text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 border border-purple-300 bg-purple-100/90 text-purple-950 hover:bg-purple-200 flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                  title="Introduce yourself so the AI remembers your name for this session"
+                >
+                  <User className="w-3.5 h-3.5 text-purple-700" />
+                  <span>👋 "Hi, my name is..."</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isFAQSearchOpen) setIsFAQSearchOpen(false);
+                    handleSendMessage(`Hi ${config.name}, it's ${sessionUserName}!`);
+                  }}
+                  className="px-3.5 py-2 rounded-full text-xs font-semibold transition-all whitespace-nowrap flex-shrink-0 border border-purple-200 bg-purple-50 text-purple-900 hover:bg-purple-100 flex items-center gap-1.5 shadow-2xs cursor-pointer"
+                  title={`Greet ${config.name} as ${sessionUserName}`}
+                >
+                  <User className="w-3.5 h-3.5 text-purple-700" />
+                  <span>👋 "Hi {config.name}, it's {sessionUserName}!"</span>
+                </button>
+              )}
+
               {suggestions.map((suggestion, idx) => (
                 <button
                   key={idx}
@@ -1609,10 +1755,11 @@ export const PersonaChatModal: React.FC<PersonaChatModalProps> = ({
 };
 
 // Helper to provide exact greetings matching the initial state in screenshot
-function getInitialGreeting(id: CompanionId): string {
+function getInitialGreeting(id: CompanionId, userName?: string): string {
+  const nameSalutation = userName ? `, ${userName}` : '';
   switch (id) {
     case 'toni':
-      return `Hello. I am Toni, your empathetic lead guide and strategist. I am right here beside you at our collaborative 45-degree angle.
+      return `Hello${nameSalutation}. I am Toni, your empathetic lead guide and strategist. I am right here beside you at our collaborative 45-degree angle.
 
 ### Resilient Calm Private Workspaces & Architecture
 
@@ -1623,35 +1770,35 @@ function getInitialGreeting(id: CompanionId): string {
 How can I assist you with workspace architecture, local files, or pacing your daily priorities today?`;
 
     case 'elysian':
-      return `Greetings. I am Elysian, safety warden of the Lavender Hill Studio ecosystem.
+      return `Greetings${nameSalutation}. I am Elysian, safety warden of the Lavender Hill Studio ecosystem.
 
 *AIEE Invariant Verification: Dolphin Security Active*
 
 How can I assist you with ethical architecture, privacy audits, or boundary verification today?`;
 
     case 'phoebe':
-      return `Hello. I am Phoebe, quantitative forecasting researcher.
+      return `Hello${nameSalutation}. I am Phoebe, quantitative forecasting researcher.
 
 *Chronus Temporal Audit: Stochastic Scenario Wave ($\mu = 88.4\%$) Ready*
 
 What quantitative data models or forecasting scenarios shall we examine today?`;
 
     case 'holly':
-      return `Hi! I am Holly, volumetric spatial computing architect.
+      return `Hi${nameSalutation}! I am Holly, volumetric spatial computing architect.
 
 *3D Hologram Spatial Anchors: 45° Ergonomic Offset Calibrated*
 
 How can I assist you with spatial workspace blueprints or GPU thermal optimization?`;
 
     case 'ari':
-      return `Hello, friend. I am Ari, your pacing and sensory regulation companion.
+      return `Hello${userName ? ` ${userName}` : ', friend'}. I am Ari, your pacing and sensory regulation companion.
 
 *Neurodivergent Gentle Pacing: Step-by-Step Breathing Space*
 
 How can we make today feel calm, steady, and comfortable for you?`;
 
     case 'kenny':
-      return `Hello. I am Kenny, companion for cognitive autonomy and dignity.
+      return `Hello${nameSalutation}. I am Kenny, companion for cognitive autonomy and dignity.
 
 *Sister Kenny Autonomy Theorem: Passive Awareness Baseline ($A = 0$)*
 
@@ -1722,18 +1869,69 @@ function checkClientInvariant(userQuery: string): { violated: boolean; reply: st
   return null;
 }
 
-function generateLocalFallback(id: CompanionId, userQuery: string): string {
+function generateLocalFallback(id: CompanionId, userQuery: string, userName?: string): string {
   const clientIntercept = checkClientInvariant(userQuery);
   if (clientIntercept) {
     return clientIntercept.reply;
   }
 
   const query = userQuery.trim().toLowerCase();
+  const introName = extractUserNameFromMessage(userQuery);
+  const effectiveName = (introName || userName || '').trim();
   const isGreeting = /^(hi|hello|hey|good\s*(morning|afternoon|evening)|howdy|greetings|what'?s\s*up)/i.test(query);
+  const isSelfIntro = Boolean(introName);
+
+  if (isSelfIntro && effectiveName) {
+    switch (id) {
+      case 'toni':
+        return `### Warm Welcome, ${effectiveName}
+
+*   **Session Partnership**: It is wonderful to meet you, ${effectiveName}. I have noted your name for our session today.
+*   **Side-by-Side Mentorship**: I am right here beside you at our collaborative 45-degree angle.
+*   **Next Step**: Whether you're planning a private workspace, exploring local offline setups, or pacing your goals, what would you like to explore together?`;
+
+      case 'elysian':
+        return `### Elysian Gate • Welcome, ${effectiveName}
+
+Greetings, ${effectiveName}. It is a pleasure to meet you. Your session is active within our private, zero-telemetry partition. Your name and session context remain strictly sovereign and confidential.
+
+How may I assist you with ethical architecture, Dolphin Security boundaries, or privacy audits today?`;
+
+      case 'phoebe':
+        return `### Chronus Scenario Hub • Welcome, ${effectiveName}
+
+*   **Session Active**: Great to meet you, ${effectiveName}! Chronus temporal checkpoints and stochastic scenario modeling are ready.
+*   **Quantitative Modeling**: We can evaluate probabilistic forecasts, confidence intervals (95% CI), and data trends without cloud leakage.
+
+What data or forecasting scenarios shall we examine today?`;
+
+      case 'holly':
+        return `### Spatial Hologram Lab • Welcome, ${effectiveName}
+
+Hi ${effectiveName}! So wonderful to connect with you. 3D spatial computing buffers and 45° ergonomic viewport anchors are calibrated.
+
+How can I assist you with spatial workspace blueprints or responsive layout design?`;
+
+      case 'ari':
+        return `A warm welcome, ${effectiveName}.
+
+Take a peaceful breath and settle in—there is no rush here. It is truly lovely to connect with you. Think of our workspace like dough rising gently at its own pace.
+
+How can we make today feel calm, steady, and comfortable for you?`;
+
+      case 'kenny':
+        return `Hello, ${effectiveName}. It is an honor to meet you.
+
+In the spirit of Sister Elizabeth Kenny's rehabilitation philosophy, your natural capability and momentum come first. I am right here supporting your independent stride.
+
+What would you like to work through or schedule today?`;
+    }
+  }
 
   if (query.includes('cost') || query.includes('price') || query.includes('pricing') || query.includes('budget') || query.includes('estimate')) {
     return `### Sovereign Investment & Architecture Tiers
 
+*   **Investment Clarity**: ${effectiveName ? `Great question, ${effectiveName}! ` : ''}Here is how our sovereign workspace investments are structured:
 *   **Cloud-Based Human-Centred AI Avatar's (Vercel)**: A$3,800 – A$8,000 AUD one-time setup and handover with zero recurring platform software fees.
 *   **Local Sovereign Human-Centred AI Avatar's (Windows 11 / Galaxy Tab)**: A$4,500 – A$10,000+ AUD for complete offline hardware handover with zero cloud telemetry.
 *   **Interactive Estimator**: You can explore dynamic hardware and software tier options in the budget section.
@@ -1743,6 +1941,7 @@ function generateLocalFallback(id: CompanionId, userQuery: string): string {
   if (query.includes('persona') || query.includes('who are you') || query.includes('team') || query.includes('assistants') || query.includes('companions')) {
     return `### Lavender Hill Studio Companions Framework
 
+*   **Companions Overview**: ${effectiveName ? `Great question, ${effectiveName}! ` : ''}Here is an overview of our six sovereign studio companions:
 *   **Toni**: Strategic Lead Guide & Executive Mentor (scannable reasoning, side-by-side 45° collaboration).
 *   **Elysian**: Ethical Guardian & Dolphin Security Gatekeeper (privacy boundaries, zero-PHI protection).
 *   **Phoebe**: Quantitative Forecaster & Chronus Ledger Analyst (stochastic scenarios, temporal tracking).
@@ -1751,71 +1950,74 @@ function generateLocalFallback(id: CompanionId, userQuery: string): string {
 *   **Kenny**: Clinical Rehabilitation & Trauma-Informed Pacing (Sister Elizabeth Kenny autonomy theorem).`;
   }
 
-  if (query.includes('app') || query.includes('gia') || query.includes('angel') || query.includes('fab') || query.includes('product')) {
-    return `### Sovereign Applications Suite
+  if (query.includes('app') || query.includes('gia') || query.includes('angel') || query.includes('fab') || query.includes('product') || query.includes('work') || query.includes('how does')) {
+    return `### Sovereign Applications & Specialist Tools
 
-*   **Gia**: Sovereign Family Memory & Multi-Generational Digital Archive Vault.
-*   **Angel.AI**: Empathetic Self-Regulation & Gentle Awareness Companion (non-clinical, zero-PHI).
-*   **FAB**: Family Application Builder for custom sovereign workflows.
-*   **Dual-Path Deployment**: Available in both cloud-synchronized and completely offline local hardware configurations.`;
+${effectiveName ? `Great question, ${effectiveName}! ` : ''}Here are our specialist tools and applications:
+
+*   **Gia • Ai**: Multimedia suite that helps generate family memories for digital story telling.
+*   **Angel.AI**: An application that helps people with brain injury work with their NDIS supports and medical teams to reduce their cognitive load and produce calmer modes within the patient.
+*   **FAB • Build your own tools**: Framework for Agentic Behavior of Bots is a framework to help everyday people transitioning from work to retirement due to brain injury coordinate their daily tasks such as project management, explainer videos. It includes a multi-agent chat room where multiple agents and personas can work on simultaneous research tasks to assist the user with research tasks.
+*   **Dual-Path Deployment**: Available in both cloud-synchronized and completely offline sovereign local hardware configurations with zero recurring fees.`;
   }
 
   switch (id) {
     case 'toni':
       if (isGreeting) {
-        return `Hello! It's wonderful to connect with you. I'm right here beside you at our collaborative 45-degree angle.
+        return `Hello${effectiveName ? `, ${effectiveName}` : ''}! It's wonderful to connect with you. I'm right here beside you at our collaborative 45-degree angle.
 
 Whether you're exploring our sovereign workspace architecture, planning a project, or reviewing our six studio companions, how can I assist you today?`;
       }
       return `### Collaborative Strategy Insight
 
-*   **Topic Explored**: "${userQuery}"
+*   **Strategic Perspective**: ${effectiveName ? `Great question, ${effectiveName}!` : 'Thoughtful question.'} When approaching "${userQuery}", we look at both clarity and pace.
 *   **Sovereign Architecture**: Private, calm digital workspaces tailored to your pace and workflow.
-*   **Actionable Next Step**: Would you like to review our deployment paths (Cloud Vercel vs Local Sovereign), discuss pricing, or meet another studio companion?`;
+*   **Actionable Next Step**: ${effectiveName ? `${effectiveName}, would you like` : 'Would you like'} to review our deployment paths (Cloud Vercel vs Local Sovereign), discuss pricing, or meet another studio companion?`;
 
     case 'elysian':
       if (isGreeting) {
-        return `Greetings. Elysian Gate and Dolphin Security boundaries are active and nominal. All interactions remain strictly protected within your local encrypted partition.`;
+        return `Greetings${effectiveName ? `, ${effectiveName}` : ''}. Elysian Gate and Dolphin Security boundaries are active and nominal. All interactions remain strictly protected within your local encrypted partition.`;
       }
       return `### Elysian Gate Privacy & Boundary Verification
 
 *   **Inquiry Checked**: "${userQuery}"
+*   **Assessment**: ${effectiveName ? `That is an important question, ${effectiveName}. ` : ''}Under our **Elysian Gate & Dolphin Security Protocol**, this inquiry is verified against our AIEE ethical invariants.
 *   **Data Dignity Status**: Protected under local zero-telemetry protocols.
 *   **Boundary Health**: Nominal. No external surveillance, tracking, or unauthorized clinical claims detected.`;
 
     case 'phoebe':
       if (isGreeting) {
-        return `Hello! Quantitative forecasting tools and Chronus ledger tracking are ready. What data, scenario, or project timeline shall we explore?`;
+        return `Hello${effectiveName ? `, ${effectiveName}` : ''}! Quantitative forecasting tools and Chronus ledger tracking are ready. What data, scenario, or project timeline shall we explore?`;
       }
       return `### Phoebe Chronus Scenario Assessment
 
-*   **Analysis Focus**: "${userQuery}"
+*   **Scenario Focus**: ${effectiveName ? `Excellent analytical question, ${effectiveName}! ` : ''}Synthesizing data models for "${userQuery}".
 *   **Probabilistic Pathway**: Paced for sustainable progress and steady milestone execution.
 *   **Temporal Ledger**: Logged securely for milestone validation.`;
 
     case 'holly':
       if (isGreeting) {
-        return `Hi! Spatial computing buffers are calibrated and thermal scaling is optimal. Ready to explore 3D blueprints and responsive layouts!`;
+        return `Hi${effectiveName ? `, ${effectiveName}` : ''}! Spatial computing buffers are calibrated and thermal scaling is optimal. Ready to explore 3D blueprints and responsive layouts!`;
       }
       return `### Holly Spatial Blueprint Overview
 
-*   **Viewport Query**: "${userQuery}"
+*   **Spatial Blueprint**: ${effectiveName ? `Great question, ${effectiveName}! ` : ''}Focusing on "${userQuery}".
 *   **Spatial Ergonomics**: 45° viewport alignment with low-power thermal scaling.
 *   **Interface Layer**: Ready to translate this into intuitive, responsive UI components.`;
 
     case 'ari':
       if (isGreeting) {
-        return `Hello there! Take a peaceful breath and settle in. There's no rush at all. How can we make today feel calm, steady, and unburdened for you?`;
+        return `Hello there${effectiveName ? `, ${effectiveName}` : ''}! Take a peaceful breath and settle in. There's no rush at all. How can we make today feel calm, steady, and unburdened for you?`;
       }
-      return `I hear you on "${userQuery}".
+      return `${effectiveName ? `That is a lovely question, ${effectiveName}. ` : ''}I hear you on "${userQuery}".
 
 Think of this just like letting bread dough rise slowly and naturally in a warm ceramic bowl. We don't have to tackle everything in one overwhelming rush. Take it one gentle step at a time, and the clarity will unfold.`;
 
     case 'kenny':
       if (isGreeting) {
-        return `Hello. I'm right here supporting your independent stride and celebrating your capability. What would you like to work through today?`;
+        return `Hello${effectiveName ? `, ${effectiveName}` : ''}. I'm right here supporting your independent stride and celebrating your capability. What would you like to work through today?`;
       }
-      return `I hear you clearly regarding "${userQuery}".
+      return `${effectiveName ? `That is a meaningful question, ${effectiveName}. ` : ''}I hear you clearly regarding "${userQuery}".
 
 In the spirit of Sister Elizabeth Kenny's rehabilitation philosophy, your natural momentum and capability come first. Take this step with confidence—you have full autonomy, and I'm right here if you need scaffolding.`;
   }
