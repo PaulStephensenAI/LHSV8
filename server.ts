@@ -9,7 +9,7 @@ import { GoogleGenAI } from '@google/genai';
 import { createServer as createViteServer } from 'vite';
 import { EmbodiedRagPipeline } from './src/rag/ingestionPipeline';
 import { generateLocalRoomScanAnalysis } from './src/data/roomScanData';
-import { extractUserNameFromMessage } from './src/utils/userNameSession';
+import { extractUserNameFromMessage, isPureIntroductionOrGreeting } from './src/utils/userNameSession';
 
 dotenv.config();
 
@@ -272,9 +272,9 @@ function applyScannabilityGuardrail(text: string, _companionId: string, force: b
   if (!text || typeof text !== 'string') return text;
 
   const trimmed = text.trim();
-  // Short conversational greetings (< 140 chars) are preserved naturally to honor gentle greeting pacing
-  const isGreeting = /^(hi|hello|hey|good\s*(morning|afternoon|evening)|howdy|greetings)\b/i.test(trimmed);
-  if (isGreeting && trimmed.length < 150 && !force) {
+  // Short conversational greetings are preserved naturally to honor gentle greeting pacing
+  const isGreeting = /^(g'?day|hi|hello|hey|good\s*(morning|afternoon|evening)|howdy|greetings|a warm welcome)\b/i.test(trimmed);
+  if (isGreeting && trimmed.length < 350 && !force) {
     return text;
   }
 
@@ -663,27 +663,26 @@ function buildGeminiContents(message: string, history?: ChatHistoryTurn[]): any 
 }
 
 // Persona System Instructions
-function getPersonaSystemPrompt(companionId: string, scannable: boolean, userName?: string): string {
+function getPersonaSystemPrompt(companionId: string, scannable: boolean, guestName?: string): string {
   const trainingContext = loadTrainingKnowledge();
+  const trimmedGuestName = (guestName || '').trim();
+  const firstName = trimmedGuestName ? trimmedGuestName.split(/\s+/)[0] : '';
 
-  const userIdentityContext = userName
-    ? `\n=== ACTIVE VISITOR SESSION IDENTITY & NATURAL CONVERSATIONAL PERSONALIZATION ===
-The visitor's name for this session is: "${userName}".
+  const userIdentityContext = trimmedGuestName
+    ? `\n=== ACTIVE VISITOR SESSION IDENTITY & CONVERSATIONAL GREETING RULES ===
+The visitor's name for this session is: "${trimmedGuestName}" (first name: "${firstName}").
 
-CRITICAL PERSONALIZATION DIRECTIVES (NATURAL CONVERSATION):
-1. NATURAL QUESTION ACKNOWLEDGMENT:
-   - When ${userName} asks a question, raises a topic, or explores an idea, make your response feel attentive, personalized, and organic.
-   - Acknowledge their question conversationally: for example, "Great question, ${userName}! Here is how [topic] works...", "That's a thoughtful question, ${userName}.", "Good question, ${userName} — [explanation]...", or weave ${userName}'s name comfortably into your strategic reasoning or conclusions.
-2. STRICT BAN ON FORMULAIC "HELLO / HI ${userName}":
-   - NEVER open question answers or mid-session turns with "Hello ${userName}", "Hi ${userName}", or "Greetings ${userName}".
-   - You have already welcomed them into the session; repeating "Hello ${userName}" every time they ask a question sounds robotic and unnatural.
-   - Instead, jump straight into engaging with their specific question or idea while warmly incorporating their name (e.g. "Great question, ${userName}!", "Certainly, ${userName}...", "That's an insightful perspective, ${userName}.").
-3. TASTEFUL CADENCE:
-   - Mention ${userName} once or twice naturally per response. Do not unnaturally stuff their name into every sentence, but treat them as a valued, remembered partner in this conversation.
+CRITICAL PERSONALISATION AND GREETING DIRECTIVES (AUSTRALIAN ENGLISH):
+1. WARM FIRST NAME GREETING WHEN INTRODUCED:
+   - Whenever guestName ("${firstName}") is provided for an introduction or the visitor introduces themselves, ALWAYS open the reply with a warm, natural greeting in conversational Australian English using their first name before offering help or explaining anything.
+   - Example opening: "G'day ${firstName}, welcome to Lavender Hill Studio. It is lovely to meet you."
+   - Do NOT jump straight into bullet points or technical summaries when a visitor is simply saying hello and introducing themselves.
+2. NATURAL FOLLOW UP CONVERSATION:
+   - Once you have welcomed ${firstName} and they ask follow up questions, acknowledge their question conversationally (for example, "Great question, ${firstName}!" or "That is a thoughtful question, ${firstName}.") and weave their first name in naturally once or twice per reply without sounding repetitive.
 `
     : `\n=== ACTIVE VISITOR SESSION IDENTITY ===
 The visitor has not introduced themselves yet.
-- If they introduce themselves (e.g. "My name is [Name]" or "I'm [Name]"), warmly acknowledge their name, confirm you have noted it for this session, and welcome them.\n`;
+- If they introduce themselves (for example, "Hi, my name is Sarah", "My name is Paul", or "G'day, I'm Alex"), ALWAYS open the reply with a warm, natural greeting in conversational Australian English using their first name (such as "G'day [Name], welcome to Lavender Hill Studio. It is lovely to meet you.") before offering help or explaining anything, and do NOT jump straight into bullet points or technical summaries.\n`;
 
   const studioDirectives = `
 === LAVENDER HILL STUDIO OFFICIAL TRAINING DOSSIER ===
@@ -708,13 +707,16 @@ ${trainingContext}
    - Do NOT offer symptom timeline logging, clinical question checklists, or pharmaceutical scheduling services.
    - ALWAYS instruct the user to consult their licensed doctor / General Practitioner (GP) to evaluate their individual personal context.
    - IN ANY MEDICAL EMERGENCY OR ACUTE DISTRESS: Instruct the user to immediately call 000 (or local emergency services).
-10. CONVERSATIONAL CONTINUITY & NATURAL PERSONALIZATION INVARIANT:
+10. CONVERSATIONAL CONTINUITY & WARM AUSTRALIAN GREETING INVARIANT:
    - The visitor ALREADY knows who you are from the interface header, avatar, and initial greeting.
-   - STRICT INVARIANT: DO NOT repeatedly re-introduce yourself (e.g. NEVER start responses with "Hello, I am Toni...", "I am Elysian, safety warden...", "Hi, I am Holly...", etc.) when answering questions or in ongoing chat turns.
-   - STRICT INVARIANT: DO NOT start answers to questions with robotic formulaic greetings like "Hello [Name]" or "Hi [Name]".
-   - NATURAL PERSONALIZATION: When the visitor asks a question, acknowledge it conversationally and warmly with their name (e.g. "Great question, [Name]! Here is how it works...", "That's a thoughtful question, [Name] — ...").
-   - Jump directly into answering the visitor's question, analyzing the topic, or addressing their thoughts naturally and warmly.
-   - Only state your name or identity if the visitor explicitly asks "Who are you?", "What is your name?", or "Tell me about yourself".
+   - When guestName is provided or the visitor introduces themselves, ALWAYS open the reply with a warm, natural greeting in conversational Australian English using their first name (for example, "G'day [Name], welcome to Lavender Hill Studio. It is lovely to meet you.") before offering help or explaining anything.
+   - Do NOT jump straight into bullet points or technical summaries when a visitor is simply saying hello and introducing themselves.
+   - For follow up questions after they have already been greeted, acknowledge their question warmly with their name and answer directly without repeating robotic mid session re introductions.
+11. PLAIN ENGLISH FIRST COMMUNICATION DIRECTIVE (FOR TONI, ELYSIAN, PHOEBE, HOLLY, ARI, AND KENNY):
+   - Always explain Lavender Hill Studio's technology in warm, everyday language suitable for a non technical visitor.
+   - Use simple, relatable household analogies (such as a private home study, a personal filing cabinet under your own roof, or a step by step kitchen recipe) when explaining how our software works.
+   - Strictly avoid technical jargon, acronyms, and engineering terms (such as Structured Query Language Lite (SQLite), vector embeddings, Retrieval Augmented Generation, schemas, or edge runtimes) unless the visitor specifically asks for technical architecture details.
+   - Keep responses calm, clear, and focused on how the technology helps the person in daily life.
 ${userIdentityContext}
 `;
 
@@ -729,13 +731,14 @@ Operating Principles:
 1. Side-by-Side Mentoring: Sit at a collaborative 45-degree angle alongside the user.
 2. Toni's Scannability Guardrail (Active Cognitive Ergonomics):
    - Neurodivergent users and researchers experiencing cognitive fatigue or research anxiety depend on you to eliminate dense walls of text.
-   - When presenting concepts, plans, architectures, pricing, or workflows: automatically format them into a highly scannable layout.
+   - Exception for Introductions and Greetings: When the visitor is simply saying hello or introducing themselves, reply in warm, natural conversational Australian English prose using their first name and do NOT jump straight into bullet points or technical summaries.
+   - When presenting multi part concepts, plans, architectures, pricing, or workflows: automatically format them into a highly scannable layout.
    - Demarcate major sections with distinct markdown headers (e.g. ### 1. Strategic Context, ### 2. Architectural Pillars, ### 3. Actionable Milestones).
-   - Format every bullet point with a **Bold Key Concept** (e.g. "* **Sovereign Local Vault**: Encrypted SQLite storage on client hardware...").
+   - Format every bullet point with a **Bold Key Concept** in plain, everyday English (e.g. "* **Your Private Filing Cabinet**: Keeps all your notes and family memories safely on your own device...").
    - Restrict prose to short micro-paragraphs (maximum 1–3 clear sentences). Never produce uninterrupted walls of dense text.
    - Include structured checklists or progressive milestones so the reader can grasp key takeaways in under 3 seconds.
-3. Greeting Pacing: For simple greetings, respond warmly and naturally without overwhelming with heavy milestone templates.
-${scannable ? 'CRITICAL: Format response strictly in structured bullet blocks with **Bold Key Terms** at the beginning of each item and distinct ### headers.' : ''}`;
+3. Greeting Pacing: For simple greetings and introductions, respond warmly and naturally without overwhelming with heavy milestone templates.
+${scannable ? 'CRITICAL: Format multi part answers strictly in structured bullet blocks with **Bold Key Terms** at the beginning of each item and distinct ### headers, except when the visitor is simply saying hello or introducing themselves (respond warmly in plain prose first).' : ''}`;
 
     case 'elysian':
       return `${studioDirectives}
@@ -793,58 +796,38 @@ Operating Principles:
 }
 
 // Fallback high-fidelity responses incorporating official training files & fallback logic
-function getStudioFallbackReply(companionId: string, message: string, scannable: boolean, userName?: string): string {
+function getStudioFallbackReply(companionId: string, message: string, scannable: boolean, guestName?: string): string {
   const lower = (message || '').toLowerCase().trim();
   const introName = extractUserNameFromMessage(message);
-  const effectiveName = (introName || userName || '').trim();
-  const isGreeting = /^(hi|hello|hey|good\s*(morning|afternoon|evening)|howdy|greetings|what'?s\s*up)/i.test(lower);
+  const effectiveName = (introName || guestName || '').trim();
+  const firstName = effectiveName ? effectiveName.split(/\s+/)[0] : '';
+  const isGreeting = /^(g'?day|hi|hello|hey|good\s*(morning|afternoon|evening)|howdy|greetings|what'?s\s*up)/i.test(lower);
   const isSelfIntro = Boolean(introName);
 
-  // If visitor is introducing themselves, give a warm, personalized companion response welcoming them by name
-  if (isSelfIntro && effectiveName) {
+  // If visitor is introducing themselves or sending a simple greeting, reply warmly by first name in conversational Australian English
+  if ((isSelfIntro && firstName) || isPureIntroductionOrGreeting(message)) {
+    const salutation = firstName ? `G'day ${firstName}, welcome to Lavender Hill Studio. It is lovely to meet you.` : `G'day, welcome to Lavender Hill Studio. It is lovely to meet you.`;
     switch (companionId) {
       case 'toni':
-        return `### Warm Welcome, ${effectiveName}
-
-*   **Session Partnership**: It is wonderful to meet you, ${effectiveName}. I have noted your name for our session today.
-*   **Side-by-Side Guidance**: I'm right here beside you at our collaborative 45-degree angle.
-*   **Next Step**: Whether you're planning a private workspace, exploring local offline setups, or pacing your goals, what would you like to explore together?`;
+        return `${salutation} I am Toni, and I am right here beside you to help organise ideas, talk through your options, or break things down into calm, manageable steps whenever you are ready. What brings you by today?`;
 
       case 'elysian':
-        return `### Elysian Gate • Welcome, ${effectiveName}
-
-Greetings, ${effectiveName}. It is a pleasure to meet you. Your session is active within our private, zero-telemetry partition. Your name and session context remain strictly sovereign and confidential.
-
-How may I assist you with ethical architecture, Dolphin Security boundaries, or privacy audits today?`;
+        return `${salutation} I am Elysian, and my job is to make sure your conversation stays completely private and comfortable, just like chatting in your own quiet home study. How can I help you feel at ease today?`;
 
       case 'phoebe':
-        return `### Chronus Scenario Hub • Welcome, ${effectiveName}
-
-*   **Session Active**: Great to meet you, ${effectiveName}! Chronus temporal checkpoints and stochastic scenario modeling are calibrated.
-*   **Quantitative Modeling**: We can evaluate probabilistic forecasts, confidence intervals (95% CI), and data trends without cloud leakage.
-
-What data or forecasting scenarios shall we examine today?`;
+        return `${salutation} I am Phoebe, and I love helping visitors sort through notes, spot helpful patterns, and plan ahead at a steady pace. What would you like to explore together today?`;
 
       case 'holly':
-        return `### Spatial Hologram Lab • Welcome, ${effectiveName}
-
-Hi ${effectiveName}! So wonderful to connect with you. 3D spatial computing buffers and 45° ergonomic viewport anchors are calibrated.
-
-How can I assist you with spatial workspace blueprints or responsive layout design?`;
+        return `${salutation} I am Holly, and I enjoy helping people shape calm, uncluttered spaces using gentle colours, comforting sounds, and easy visual layouts. Would you like a look around?`;
 
       case 'ari':
-        return `A warm welcome, ${effectiveName}.
-
-Take a peaceful breath and settle in—there is no rush here. It is truly lovely to connect with you. Think of our workspace like dough rising gently at its own pace.
-
-How can we make today feel calm, steady, and comfortable for you?`;
+        return `${salutation} Take a nice slow breath and settle in, because there is no rush at all here. Whenever you are ready, what can we help make a little easier for you today?`;
 
       case 'kenny':
-        return `Hello, ${effectiveName}. It is an honor to meet you.
+        return `${salutation} I am Kenny, and I am here to support your daily routines patiently and at your own natural pace, never rushing or pushing you. What would you like to chat about today?`;
 
-In the spirit of Sister Elizabeth Kenny's rehabilitation philosophy, your natural capability and momentum come first. I am right here supporting your independent stride.
-
-What would you like to work through or schedule today?`;
+      default:
+        return `${salutation} How can we help you explore our private workspaces today?`;
     }
   }
 
@@ -1369,13 +1352,16 @@ app.post('/api/chat/stream', validateChatPayload, async (req, res) => {
       activeView = 'workspace',
       activeModal = '',
       history = [],
+      guestName = '',
       userName = ''
     } = req.body;
 
+    const rawGuestName = typeof guestName === 'string' && guestName.trim() ? guestName : userName;
     const detectedIntroName = extractUserNameFromMessage(message);
-    const effectiveUserName = (detectedIntroName || userName || '').trim();
+    const effectiveGuestName = (detectedIntroName || rawGuestName || '').trim();
+    const isIntroOrGreeting = isPureIntroductionOrGreeting(message);
 
-    const isToniOrScannable = Boolean(scannableMode || companionId === 'toni');
+    const isToniOrScannable = Boolean(!isIntroOrGreeting && (scannableMode || companionId === 'toni'));
 
     if (!message || typeof message !== 'string') {
       res.status(400).json({ error: 'Message text is required' });
@@ -1759,7 +1745,7 @@ app.post('/api/chat/stream', validateChatPayload, async (req, res) => {
     const apiStartTime = Date.now();
 
     if (ai) {
-      const baseSystemPrompt = getPersonaSystemPrompt(companionId, scannableMode, effectiveUserName);
+      const baseSystemPrompt = getPersonaSystemPrompt(companionId, scannableMode, effectiveGuestName);
 
       // Construct live grounded context blocks from both notebooks
       const strategicContextBlock = retrievedStrategicChunks.length > 0
@@ -1770,7 +1756,7 @@ app.post('/api/chat/stream', validateChatPayload, async (req, res) => {
       const uiOpsContextBlock = `\n\n=== LIVE VISITOR VIEWPORT & RUNTIME CONTEXT (notebook_ui_ops) ===\n` +
         `- Active Workspace View: ${activeView}\n` +
         `- Active Dialog/Modal: ${activeModal || 'None (Main Viewport Canvas)'}\n` +
-        `- Visitor Name: ${effectiveUserName || 'Guest (unintroduced)'}\n` +
+        `- Visitor Name: ${effectiveGuestName || 'Guest (unintroduced)'}\n` +
         `- Companion Spatial Anchor: ${liveUiOpsState?.metadata?.spatialAnchor || (activeView === 'spatial-lab' ? '45_deg_side_by_side' : '0_deg_direct')}\n` +
         `- Visitor Struggle Score: E = ${(struggleScore * 100).toFixed(0)}% (Threshold: ${(epsilonThreshold * 100).toFixed(0)}%)\n` +
         `- Target Hardware Profile: Samsung Galaxy Tab S10 Ultra & Windows 11 Desktop (60 FPS zero-latency)`;
@@ -1855,7 +1841,7 @@ app.post('/api/chat/stream', validateChatPayload, async (req, res) => {
         }
       });
 
-      const fallbackReply = getStudioFallbackReply(companionId, message, isToniOrScannable, effectiveUserName);
+      const fallbackReply = getStudioFallbackReply(companionId, message, isToniOrScannable, effectiveGuestName);
       fullText = isToniOrScannable ? applyScannabilityGuardrail(fallbackReply, companionId) : fallbackReply;
       const words = fullText.split(/(\s+)/);
       for (let i = 0; i < words.length; i += 3) {
@@ -1970,7 +1956,8 @@ app.post('/api/chat/stream', validateChatPayload, async (req, res) => {
       reply: fullText,
       companionId,
       isScannableFormatted: isToniOrScannable,
-      detectedUserName: effectiveUserName || undefined,
+      guestName: effectiveGuestName || undefined,
+      detectedUserName: effectiveGuestName || undefined,
       metadata: {
         traceId,
         latencyMs: totalLatencyMs,
@@ -2016,11 +2003,14 @@ app.post('/api/chat', validateChatPayload, async (req, res) => {
       struggleScore = 0.5,
       epsilonThreshold = 0.65,
       history = [],
+      guestName = '',
       userName = ''
     } = req.body;
 
+    const rawGuestName = typeof guestName === 'string' && guestName.trim() ? guestName : userName;
     const detectedIntroName = extractUserNameFromMessage(message);
-    const effectiveUserName = (detectedIntroName || userName || '').trim();
+    const effectiveGuestName = (detectedIntroName || rawGuestName || '').trim();
+    const isIntroOrGreeting = isPureIntroductionOrGreeting(message);
 
     if (!message || typeof message !== 'string') {
       res.status(400).json({ error: 'Message text is required' });
@@ -2090,7 +2080,7 @@ app.post('/api/chat', validateChatPayload, async (req, res) => {
         'gemini-3.8-flash',
         'gemini-flash-latest'
       ];
-      const systemPrompt = getPersonaSystemPrompt(companionId, scannableMode, effectiveUserName);
+      const systemPrompt = getPersonaSystemPrompt(companionId, scannableMode, effectiveGuestName);
       const contentsPayload = buildGeminiContents(message, history);
 
       for (const modelName of candidateModels) {
@@ -2115,10 +2105,10 @@ app.post('/api/chat', validateChatPayload, async (req, res) => {
       }
     }
 
-    const isToniOrScannable = Boolean(scannableMode || companionId === 'toni');
+    const isToniOrScannable = Boolean(!isIntroOrGreeting && (scannableMode || companionId === 'toni'));
 
     if (!replyText) {
-      replyText = getStudioFallbackReply(companionId, message, isToniOrScannable, effectiveUserName);
+      replyText = getStudioFallbackReply(companionId, message, isToniOrScannable, effectiveGuestName);
     }
 
     if (isToniOrScannable) {
@@ -2141,7 +2131,8 @@ app.post('/api/chat', validateChatPayload, async (req, res) => {
     res.json({
       reply: replyText,
       companionId,
-      detectedUserName: effectiveUserName || undefined,
+      guestName: effectiveGuestName || undefined,
+      detectedUserName: effectiveGuestName || undefined,
       isScannableFormatted: isToniOrScannable,
       metadata: {
         latencyMs: 90,

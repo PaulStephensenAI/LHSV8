@@ -382,13 +382,15 @@ export const PersonaChatModal: React.FC<PersonaChatModalProps> = ({
     const text = textToSend || inputText;
     if (!text.trim() || isLoading) return;
 
-    // Detect if the user introduces themselves in this message
+    // Detect if the user introduces themselves in this message and fall back to stored session name
     const detectedIntroName = extractUserNameFromMessage(text);
-    let currentUserName = sessionUserName;
+    let currentUserName = (detectedIntroName || sessionUserName || getStoredSessionUserName()).trim();
     if (detectedIntroName && detectedIntroName !== sessionUserName) {
       currentUserName = detectedIntroName;
       setSessionUserName(detectedIntroName);
       saveStoredSessionUserName(detectedIntroName);
+    } else if (currentUserName && !getStoredSessionUserName()) {
+      saveStoredSessionUserName(currentUserName);
     }
 
     const userMessageId = `user-${Date.now()}`;
@@ -449,6 +451,7 @@ export const PersonaChatModal: React.FC<PersonaChatModalProps> = ({
           sessionId,
           activeView: activeViewSection,
           activeModal: activeModal || '',
+          guestName: currentUserName || undefined,
           userName: currentUserName || undefined,
           context: `Live visitor session in Lavender Hill Studio with active view ${activeViewSection}.`
         })
@@ -494,9 +497,10 @@ export const PersonaChatModal: React.FC<PersonaChatModalProps> = ({
                 if (data.reply) {
                   accumulatedText = data.reply;
                 }
-                if (data.detectedUserName) {
-                  setSessionUserName(data.detectedUserName);
-                  saveStoredSessionUserName(data.detectedUserName);
+                const resolvedGuestName = data.guestName || data.detectedUserName;
+                if (resolvedGuestName) {
+                  setSessionUserName(resolvedGuestName);
+                  saveStoredSessionUserName(resolvedGuestName);
                 }
                 if (data.metadata?.interceptTriggered) {
                   isGuardrail = true;
@@ -1869,53 +1873,29 @@ function generateLocalFallback(id: CompanionId, userQuery: string, userName?: st
   const query = userQuery.trim().toLowerCase();
   const introName = extractUserNameFromMessage(userQuery);
   const effectiveName = (introName || userName || '').trim();
-  const isGreeting = /^(hi|hello|hey|good\s*(morning|afternoon|evening)|howdy|greetings|what'?s\s*up)/i.test(query);
+  const firstName = effectiveName ? effectiveName.split(/\s+/)[0] : '';
+  const isGreeting = /^(g'?day|hi|hello|hey|good\s*(morning|afternoon|evening)|howdy|greetings|what'?s\s*up)/i.test(query);
   const isSelfIntro = Boolean(introName);
 
-  if (isSelfIntro && effectiveName) {
+  if (isSelfIntro && firstName) {
     switch (id) {
       case 'toni':
-        return `### Warm Welcome, ${effectiveName}
-
-*   **Session Partnership**: It is wonderful to meet you, ${effectiveName}. I have noted your name for our session today.
-*   **Side-by-Side Mentorship**: I am right here beside you at our collaborative 45-degree angle.
-*   **Next Step**: Whether you're planning a private workspace, exploring local offline setups, or pacing your goals, what would you like to explore together?`;
+        return `G'day ${firstName}, welcome to Lavender Hill Studio. It is lovely to meet you. I am Toni, and I am right here beside you to help organise ideas, talk through your options, or break things down into calm, manageable steps whenever you are ready. What brings you by today?`;
 
       case 'elysian':
-        return `### Elysian Gate • Welcome, ${effectiveName}
-
-Greetings, ${effectiveName}. It is a pleasure to meet you. Your session is active within our private, zero-telemetry partition. Your name and session context remain strictly sovereign and confidential.
-
-How may I assist you with ethical architecture, Dolphin Security boundaries, or privacy audits today?`;
+        return `G'day ${firstName}, welcome to Lavender Hill Studio. It is lovely to meet you. I am Elysian, and my job is to make sure your conversation stays completely private and comfortable, just like chatting in your own quiet home study. How can I help you feel at ease today?`;
 
       case 'phoebe':
-        return `### Chronus Scenario Hub • Welcome, ${effectiveName}
-
-*   **Session Active**: Great to meet you, ${effectiveName}! Chronus temporal checkpoints and stochastic scenario modeling are ready.
-*   **Quantitative Modeling**: We can evaluate probabilistic forecasts, confidence intervals (95% CI), and data trends without cloud leakage.
-
-What data or forecasting scenarios shall we examine today?`;
+        return `G'day ${firstName}, welcome to Lavender Hill Studio. It is lovely to meet you. I am Phoebe, and I love helping visitors sort through notes, spot helpful patterns, and plan ahead at a steady pace. What would you like to explore together today?`;
 
       case 'holly':
-        return `### Spatial Hologram Lab • Welcome, ${effectiveName}
-
-Hi ${effectiveName}! So wonderful to connect with you. 3D spatial computing buffers and 45° ergonomic viewport anchors are calibrated.
-
-How can I assist you with spatial workspace blueprints or responsive layout design?`;
+        return `G'day ${firstName}, welcome to Lavender Hill Studio. It is lovely to meet you. I am Holly, and I enjoy helping people shape calm, uncluttered spaces using gentle colours, comforting sounds, and easy visual layouts. Would you like a look around?`;
 
       case 'ari':
-        return `A warm welcome, ${effectiveName}.
-
-Take a peaceful breath and settle in—there is no rush here. It is truly lovely to connect with you. Think of our workspace like dough rising gently at its own pace.
-
-How can we make today feel calm, steady, and comfortable for you?`;
+        return `G'day ${firstName}, welcome to Lavender Hill Studio. It is lovely to meet you. Take a nice slow breath and settle in, because there is no rush at all here. Whenever you are ready, what can we help make a little easier for you today?`;
 
       case 'kenny':
-        return `Hello, ${effectiveName}. It is an honor to meet you.
-
-In the spirit of Sister Elizabeth Kenny's rehabilitation philosophy, your natural capability and momentum come first. I am right here supporting your independent stride.
-
-What would you like to work through or schedule today?`;
+        return `G'day ${firstName}, welcome to Lavender Hill Studio. It is lovely to meet you. I am Kenny, and I am here to support your daily routines patiently and at your own natural pace, never rushing or pushing you. What would you like to chat about today?`;
     }
   }
 
@@ -1955,61 +1935,59 @@ ${effectiveName ? `Great question, ${effectiveName}! ` : ''}Here are our special
   switch (id) {
     case 'toni':
       if (isGreeting) {
-        return `Hello${effectiveName ? `, ${effectiveName}` : ''}! It's wonderful to connect with you. I'm right here beside you at our collaborative 45-degree angle.
-
-Whether you're exploring our sovereign workspace architecture, planning a project, or reviewing our six studio companions, how can I assist you today?`;
+        return `${firstName ? `G'day ${firstName}, welcome` : `G'day, welcome`} to Lavender Hill Studio. It is lovely to meet you. I am right here beside you to help plan your workspace, sort through ideas, or chat about our private tools whenever you are ready.`;
       }
       return `### Collaborative Strategy Insight
 
-*   **Strategic Perspective**: ${effectiveName ? `Great question, ${effectiveName}!` : 'Thoughtful question.'} When approaching "${userQuery}", we look at both clarity and pace.
-*   **Sovereign Architecture**: Private, calm digital workspaces tailored to your pace and workflow.
-*   **Actionable Next Step**: ${effectiveName ? `${effectiveName}, would you like` : 'Would you like'} to review our deployment paths (Cloud Vercel vs Local Sovereign), discuss pricing, or meet another studio companion?`;
+*   **Strategic Perspective**: ${firstName ? `Great question, ${firstName}!` : 'Thoughtful question.'} When approaching "${userQuery}", we look at both clarity and pace.
+*   **Private Workspace Design**: Calm digital workspaces tailored to your pace and everyday workflow.
+*   **Actionable Next Step**: ${firstName ? `${firstName}, would you like` : 'Would you like'} to review our cloud and on device options, look at pricing, or meet another studio companion?`;
 
     case 'elysian':
       if (isGreeting) {
-        return `Greetings${effectiveName ? `, ${effectiveName}` : ''}. Elysian Gate and Dolphin Security boundaries are active and nominal. All interactions remain strictly protected within your local encrypted partition.`;
+        return `${firstName ? `G'day ${firstName}, welcome` : `G'day, welcome`} to Lavender Hill Studio. It is lovely to meet you. Everything you share here stays strictly private under your own roof. How can I help you feel comfortable today?`;
       }
       return `### Elysian Gate Privacy & Boundary Verification
 
 *   **Inquiry Checked**: "${userQuery}"
-*   **Assessment**: ${effectiveName ? `That is an important question, ${effectiveName}. ` : ''}Under our **Elysian Gate & Dolphin Security Protocol**, this inquiry is verified against our AIEE ethical invariants.
+*   **Assessment**: ${firstName ? `That is an important question, ${firstName}. ` : ''}Your privacy and comfort always come first at Lavender Hill Studio.
 *   **Data Dignity Status**: Protected under local zero-telemetry protocols.
-*   **Boundary Health**: Nominal. No external surveillance, tracking, or unauthorized clinical claims detected.`;
+*   **Boundary Health**: Nominal. No external surveillance or tracking detected.`;
 
     case 'phoebe':
       if (isGreeting) {
-        return `Hello${effectiveName ? `, ${effectiveName}` : ''}! Quantitative forecasting tools and Chronus ledger tracking are ready. What data, scenario, or project timeline shall we explore?`;
+        return `${firstName ? `G'day ${firstName}, welcome` : `G'day, welcome`} to Lavender Hill Studio. It is lovely to meet you. I am ready whenever you would like to sort through notes, explore ideas, or plan ahead together.`;
       }
-      return `### Phoebe Chronus Scenario Assessment
+      return `### Phoebe Research & Planning Overview
 
-*   **Scenario Focus**: ${effectiveName ? `Excellent analytical question, ${effectiveName}! ` : ''}Synthesizing data models for "${userQuery}".
-*   **Probabilistic Pathway**: Paced for sustainable progress and steady milestone execution.
-*   **Temporal Ledger**: Logged securely for milestone validation.`;
+*   **Scenario Focus**: ${firstName ? `That is a thoughtful question, ${firstName}. ` : ''}Looking closely at "${userQuery}".
+*   **Steady Planning**: Organised for sustainable progress and calm milestone steps.
+*   **Private Notes**: Kept safely in your own workspace.`;
 
     case 'holly':
       if (isGreeting) {
-        return `Hi${effectiveName ? `, ${effectiveName}` : ''}! Spatial computing buffers are calibrated and thermal scaling is optimal. Ready to explore 3D blueprints and responsive layouts!`;
+        return `${firstName ? `G'day ${firstName}, welcome` : `G'day, welcome`} to Lavender Hill Studio. It is lovely to meet you. Ready to explore calm, uncluttered workspace designs whenever you are.`;
       }
-      return `### Holly Spatial Blueprint Overview
+      return `### Holly Spatial Layout Overview
 
-*   **Spatial Blueprint**: ${effectiveName ? `Great question, ${effectiveName}! ` : ''}Focusing on "${userQuery}".
-*   **Spatial Ergonomics**: 45° viewport alignment with low-power thermal scaling.
-*   **Interface Layer**: Ready to translate this into intuitive, responsive UI components.`;
+*   **Visual Design**: ${firstName ? `Great question, ${firstName}! ` : ''}Focusing on "${userQuery}".
+*   **Calm Screen Comfort**: Arranged gently so nothing feels crowded or overwhelming.
+*   **Interface Layer**: Ready to help you shape an easy, inviting workspace.`;
 
     case 'ari':
       if (isGreeting) {
-        return `Hello there${effectiveName ? `, ${effectiveName}` : ''}! Take a peaceful breath and settle in. There's no rush at all. How can we make today feel calm, steady, and unburdened for you?`;
+        return `${firstName ? `G'day ${firstName}, welcome` : `G'day, welcome`} to Lavender Hill Studio. It is lovely to meet you. Take a peaceful breath and settle in, because there is no rush at all here. How can we make today feel calm and steady for you?`;
       }
-      return `${effectiveName ? `That is a lovely question, ${effectiveName}. ` : ''}I hear you on "${userQuery}".
+      return `${firstName ? `That is a lovely question, ${firstName}. ` : ''}I hear you on "${userQuery}".
 
-Think of this just like letting bread dough rise slowly and naturally in a warm ceramic bowl. We don't have to tackle everything in one overwhelming rush. Take it one gentle step at a time, and the clarity will unfold.`;
+Think of this just like letting bread dough rise slowly and naturally in a warm ceramic bowl. We do not have to tackle everything in one overwhelming rush. Take it one gentle step at a time, and clarity will follow.`;
 
     case 'kenny':
       if (isGreeting) {
-        return `Hello${effectiveName ? `, ${effectiveName}` : ''}. I'm right here supporting your independent stride and celebrating your capability. What would you like to work through today?`;
+        return `${firstName ? `G'day ${firstName}, welcome` : `G'day, welcome`} to Lavender Hill Studio. It is lovely to meet you. I am right here supporting your natural stride at your own pace. What would you like to work through today?`;
       }
-      return `${effectiveName ? `That is a meaningful question, ${effectiveName}. ` : ''}I hear you clearly regarding "${userQuery}".
+      return `${firstName ? `That is a meaningful question, ${firstName}. ` : ''}I hear you clearly regarding "${userQuery}".
 
-In the spirit of Sister Elizabeth Kenny's rehabilitation philosophy, your natural momentum and capability come first. Take this step with confidence—you have full autonomy, and I'm right here if you need scaffolding.`;
+In the spirit of Sister Elizabeth Kenny's rehabilitation philosophy, your natural capability and comfort come first. Move at your own stride, and I am right here whenever you want a hand.`;
   }
 }

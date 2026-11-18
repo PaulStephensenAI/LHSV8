@@ -3,7 +3,7 @@ export interface StudioTrainingFile {
   filename: string;
   title: string;
   priority: 'HIGH' | 'MEDIUM' | 'LOW';
-  category: 'Ethos & Identity' | 'Personas & Architecture' | 'Founder & Philosophy' | 'Security & Compliance' | 'Engineering & Quality' | 'System Instructions' | 'Index & Hub';
+  category: 'Ethos & Identity' | 'Personas & Architecture' | 'Founder & Philosophy' | 'Security & Compliance' | 'Engineering & Quality' | 'System Instructions' | 'Index & Hub' | 'Visitor Guide';
   summary: string;
   content: string;
 }
@@ -335,6 +335,7 @@ All files in this folder are automatically loaded at server startup by loadTrain
 | 05_product_quality_audit_&_architecture_report.txt | AS/NZS ISO/IEC 25010 (SQuaRE) 5.0/5.0 Audit Report, full tech stack, Vitest testing, Gzip compression, and security middleware details. | MEDIUM |
 | 06_Server_ System_Instructions_&_Deterministic_Fallbacks.txt | Live production system prompts (api/chat.ts & server.ts), keyword-triggered deterministic fallback replies, rate limiting, and Zod payload schemas. | MEDIUM |
 | 07_Lavender_Hill_Studio_Master_AI_Training_Index_&_Context Hub.txt | This file — master index and operational guidelines. | LOW |
+| 08_Plain_English_Visitor_Guide.txt | Plain English visitor guide with everyday household analogies, plain language descriptions of our three main tools and six studio helpers, and the zero subscription promise. | HIGH |
 
 ---
 
@@ -359,5 +360,40 @@ All files in this folder are automatically loaded at server startup by loadTrain
 
 5. Zero-Subscription Model:
 - Clarify that Lavender Hill Studio builds bespoke private workspaces on a setup & handover model—clients own their code and data, with zero recurring software subscription fees charged by the studio.`
+  },
+  {
+    id: '08',
+    filename: '08_Plain_English_Visitor_Guide.txt',
+    title: 'Plain English Visitor Guide',
+    priority: 'HIGH',
+    category: 'Visitor Guide',
+    summary: 'Plain English visitor guide explaining Lavender Hill Studio using everyday household analogies for non technical visitors.',
+    content: `08: Plain English Visitor Guide for Everyday Conversations
+
+What Lavender Hill Studio Does
+Lavender Hill Studio builds calm, private digital helpers that live on the devices you already own, such as your Windows laptop or Samsung tablet[cite: 114, 145]. Most modern artificial intelligence tools act like a rented apartment in the cloud where your personal notes, private conversations, and daily habits are stored on someone else's computer[cite: 128, 145]. Lavender Hill Studio takes the opposite approach[cite: 128, 145]. We build your private workspace under your own roof so your memories, creative work, and personal information belong strictly to you[cite: 114, 145].
+
+How Our Technology Works (Kitchen Logic)
+Think of our software like a well organised home study rather than a noisy shopping centre[cite: 109, 127]. 
+1. Your Private Filing Cabinet: When you save a note, a family photo, or a care schedule, it goes straight onto your own device's hard drive[cite: 137, 145]. It is never sent away to be mined or sold[cite: 111, 178].
+2. Predictable Recipes, Not Magic: Our digital helpers do not guess wildly or pretend to be human[cite: 155, 168]. They follow clear, step by step recipes designed by our founder, Paul Stephensen, to keep you safe, calm, and in control[cite: 155]. If a helper is unsure about an answer, it pauses and asks you rather than making something up[cite: 21, 30].
+3. Your Choice of Setup: Some families and small teams want their workspace saved strictly offline on one laptop or tablet[cite: 114, 176]. Others need a secure online setup so team members in different places can share notes safely[cite: 114, 176]. We build both, and once we set it up for you, you own it outright with no ongoing software rental fees[cite: 167, 176].
+
+What Our Three Main Tools Do
+1. Gia (Your Family Scrapbook and Voice Vault): A quiet, private place on your tablet or computer to save voice recordings, family stories, milestone dates, and treasured photos so they are never lost[cite: 119, 175].
+2. Angel.AI (Your Gentle Care and Wellness Helper): A supportive daily planner built for people navigating memory loss, brain injury, or busy care routines[cite: 1, 73]. It helps track daily habits, medications, and moods calmly without ever giving medical advice or replacing your doctor[cite: 35, 73, 207].
+3. FAB (Your Bespoke Application Builder): A clean, clutter free desk where writers, researchers, and small businesses can organise documents and build custom helper tools without technical coding skills[cite: 137, 175].
+
+Meet Your Six Studio Helpers
+Instead of one overwhelming program, Lavender Hill Studio gives you six specialised helpers who each look after a different part of your day[cite: 114, 131]:
+- Toni (Your Everyday Guide): Helps you plan projects, organise messy thoughts, and break big tasks into calm, manageable steps[cite: 1, 175].
+- Ari (Your Gentle Pacing Helper): Notices when you are feeling overwhelmed or rushed, slowing things down and keeping your screen uncluttered[cite: 157, 175].
+- Kenny (Your Care and Recovery Helper): Supports daily rehabilitation and wellness routines with patience, never pushing you when you need a rest[cite: 175, 237].
+- Phoebe (Your Research Helper): Reads through long documents and helps you spot patterns, plan ahead, and organise your notes[cite: 119, 175].
+- Holly (Your Visual Space Builder): Helps you arrange your digital workspace visually, using calming colours, gentle sounds, and three dimensional room layouts[cite: 119, 175, 237].
+- Elysian (Your Safety Guardian): Quietly checks every conversation in the background to ensure your privacy is protected and that no helper ever oversteps its boundaries[cite: 1, 175].
+
+How to Explain Our Promise in One Sentence
+We build gentle, private digital helpers that organise your work and protect your memories under your own roof, with zero ongoing subscription fees[cite: 114, 137, 167].`
   }
 ];

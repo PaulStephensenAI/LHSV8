@@ -500,35 +500,74 @@ export class EmbodiedRagPipeline {
 
   /**
    * Cold-Start Auto-Ingestion & Verification:
-   * Ensures lavenderhill_rag.db has valid strategic and UI ops data upon web server boot.
+   * Ensures lavenderhill_rag.db has valid strategic and UI ops data upon web server boot,
+   * and automatically ingests any newly added or modified files in knowledgeDir.
    */
   public async ensureColdStartReady(knowledgeDir: string): Promise<{ strategicCount: number; uiOpsCount: number; autoIngested: boolean }> {
     let counts = this.getCounts();
-    if (counts.strategicCount > 0 && counts.uiOpsCount > 0) {
-      console.log(`[RAG Engine] Cold-start ready: ${counts.strategicCount} strategic records, ${counts.uiOpsCount} UI ops records.`);
-      this.warmupUiOpsCache();
-      return { ...counts, autoIngested: false };
-    }
+    let autoIngested = false;
 
-    console.log('[RAG Engine] Cold-start detected empty or incomplete tables. Initiating automated ingestion...');
-    // 1. Seed UI Ops records
-    for (const seed of DEFAULT_UI_OPS_SEEDS) {
-      try {
-        await this.ingestChunk(seed);
-      } catch (err: any) {
-        console.warn(`[RAG Engine] Seed UI ops warning: ${err?.message || err}`);
+    if (counts.strategicCount === 0 || counts.uiOpsCount === 0) {
+      console.log('[RAG Engine] Cold-start detected empty or incomplete tables. Initiating automated ingestion...');
+      // 1. Seed UI Ops records
+      for (const seed of DEFAULT_UI_OPS_SEEDS) {
+        try {
+          await this.ingestChunk(seed);
+        } catch (err: any) {
+          console.warn(`[RAG Engine] Seed UI ops warning: ${err?.message || err}`);
+        }
       }
-    }
 
-    // 2. Ingest Knowledge Directory
-    if (fs.existsSync(knowledgeDir)) {
-      await this.ingestDirectory(knowledgeDir);
+      // 2. Ingest Knowledge Directory
+      if (fs.existsSync(knowledgeDir)) {
+        await this.ingestDirectory(knowledgeDir);
+      }
+      autoIngested = true;
+    } else if (fs.existsSync(knowledgeDir)) {
+      // Verify whether any files in knowledgeDir are missing or newer than stored chunks
+      const existingRows = this.db
+        .prepare('SELECT sourceFile, MAX(updatedAt) as lastUpdated FROM notebook_strategic GROUP BY sourceFile')
+        .all() as Array<{ sourceFile: string; lastUpdated: string }>;
+
+      const storedByBasename = new Map<string, number>();
+      for (const row of existingRows) {
+        const ts = Date.parse(row.lastUpdated || '');
+        storedByBasename.set(path.basename(row.sourceFile), Number.isNaN(ts) ? 0 : ts);
+      }
+
+      const dirFiles = fs.readdirSync(knowledgeDir).sort();
+      const filesToIngest: string[] = [];
+
+      for (const file of dirFiles) {
+        const fullPath = path.join(knowledgeDir, file);
+        const stat = fs.statSync(fullPath);
+        if (!stat.isFile() || !(file.endsWith('.md') || file.endsWith('.txt') || file.endsWith('.json'))) {
+          continue;
+        }
+        const storedTs = storedByBasename.get(file);
+        if (storedTs === undefined || stat.mtimeMs > storedTs) {
+          filesToIngest.push(fullPath);
+        }
+      }
+
+      if (filesToIngest.length > 0) {
+        console.log(`[RAG Engine] Detected ${filesToIngest.length} new or updated dossier file(s). Ingesting updates...`);
+        for (const fullPath of filesToIngest) {
+          const content = fs.readFileSync(fullPath, 'utf-8');
+          const chunks = this.chunkDocument(fullPath, content);
+          for (const chunk of chunks) {
+            await this.ingestChunk(chunk);
+          }
+          console.log(`[RAG Engine] Synchronised chunks for ${path.basename(fullPath)} (${chunks.length} chunks).`);
+        }
+        autoIngested = true;
+      }
     }
 
     this.warmupUiOpsCache();
     counts = this.getCounts();
-    console.log(`[RAG Engine] Automated cold-start ingestion complete: ${counts.strategicCount} strategic, ${counts.uiOpsCount} UI ops.`);
-    return { ...counts, autoIngested: true };
+    console.log(`[RAG Engine] Cold-start ready: ${counts.strategicCount} strategic records, ${counts.uiOpsCount} UI ops records.`);
+    return { ...counts, autoIngested };
   }
 
   /**

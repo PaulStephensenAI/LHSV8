@@ -19,6 +19,7 @@ All files in this folder are automatically loaded at server startup by `loadTrai
 | `05_product_quality_audit_&_architecture_report.txt` | AS/NZS ISO/IEC 25010 (SQuaRE) 5.0/5.0 Audit Report, full tech stack, Vitest testing, Gzip compression, and security middleware details. | **MEDIUM** |
 | `06_Server_ System_Instructions_&_Deterministic_Fallbacks.txt` | Live production system prompts (api/chat.ts & server.ts), keyword-triggered deterministic fallback replies, rate limiting, and Zod payload schemas. | **MEDIUM** |
 | `07_Lavender_Hill_Studio_Master_AI_Training_Index_&_Context Hub.txt` | This file — master index and operational guidelines. | **LOW** |
+| `08_Plain_English_Visitor_Guide.txt` | Plain English visitor guide with everyday household analogies, plain language descriptions of our three main tools and six studio helpers, and the zero subscription promise. | **HIGH** |
 
 ---
 

@@ -69,7 +69,7 @@ export const TrainingContextModal: React.FC<TrainingContextModalProps> = ({ isOp
               <div className="flex items-center gap-2">
                 <h3 className="font-serif font-bold text-xl leading-none">Studio Embodied Notebook Repository</h3>
                 <span className="px-2 py-0.5 rounded-full text-[11px] font-mono bg-white/20 border border-white/30 text-white">
-                  Baseline Corpus • 7 Context Files
+                  Baseline Corpus • 8 Context Files
                 </span>
               </div>
               <p className="text-xs text-white/85 mt-0.5">

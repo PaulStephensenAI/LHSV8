@@ -295,7 +295,7 @@ export const VoiceControlWidget: React.FC<VoiceControlWidgetProps> = ({
       category: 'governance',
       categoryLabel: 'Governance & Audits',
       title: 'AI Training Context Files Hub',
-      description: 'Inspects all 7 studio foundational training papers, ethics manifestos, and research portfolios.',
+      description: 'Inspects all 8 studio foundational training papers, ethics manifestos, and research portfolios.',
       phrases: ['"Training files"', '"Context files"', '"Studio context"', '"Training hub"', '"Inspect files"'],
       icon: FileText,
       color: 'text-amber-400',

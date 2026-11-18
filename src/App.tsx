@@ -479,7 +479,7 @@ export default function App() {
               className="hover:text-[#7B5C9E] transition-colors flex items-center gap-1 font-medium"
             >
               <FileText className="w-3 h-3 text-[#7B5C9E]" />
-              <span>7 Training Files</span>
+              <span>8 Training Files</span>
             </button>
             <span>•</span>
             <button
